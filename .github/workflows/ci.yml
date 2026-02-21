@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip & uv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/uv
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Install and sync with uv
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          if [ -f pyproject.toml ]; then
+            uv sync --all-extras
+          else
+            echo "pyproject.toml not found; skipping uv sync"
+          fi
+
+      - name: Format check (black, isort)
+        run: |
+          uv run black --check .
+          uv run isort --check-only .
+
+      - name: Lint
+        run: uv run flake8 --exclude=.venv,__pycache__,.git
