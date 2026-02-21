@@ -22,8 +22,8 @@ class DataManager:
             dec = header.get('DEC') or header.get('OBJDEC') or header.get('DEC_DEG')
             
             if ra is not None and dec is not None:
-                unit = (unit.deg, unit.deg) if isinstance(ra, (float, int)) else (unit.hourangle, unit.deg)
-                return SkyCoord(ra, dec, unit=unit)
+                coord_unit = (unit.deg, unit.deg) if isinstance(ra, (float, int)) else (unit.hourangle, unit.deg)
+                return SkyCoord(ra, dec, unit=coord_unit)
             else:
                 print("Coordinates not found in common metadata keys.")
                 return None
