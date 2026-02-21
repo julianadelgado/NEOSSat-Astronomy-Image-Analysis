@@ -5,4 +5,5 @@ by the [NEOSSat space telescope](https://www.asc-csa.gc.ca/eng/satellites/neossa
 ## Quick Start
 ```bash
 git clone https://github.com/julianadelgado/NEOSSat-Astronomy-Image-Analysis.git
-cd your-repo``
+cd your-repo
+```
