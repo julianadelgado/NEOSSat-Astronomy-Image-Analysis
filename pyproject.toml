@@ -1,7 +1,8 @@
 [project]
-name = "simple-fits-tool"
+name = "NEOSSat-Astronomy-Image-Analysis"
 version = "0.1.0"
 description = "A cross-platform tool to download and visualize FITS images."
+authors = [ { name = "" } ]
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
@@ -13,9 +14,15 @@ dependencies = [
     "astroquery",
 ]
 
+[project.optional-dependencies]
+dev = ["black", "isort", "flake8", "pytest"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
