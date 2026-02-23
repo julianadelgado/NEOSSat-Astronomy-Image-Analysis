@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 from astropy.io import fits
 from unittest.mock import patch, MagicMock
+from core.email_service import EmailService
 
 
 @pytest.fixture
@@ -18,7 +19,6 @@ def sample_fits_image(tmp_path):
     hdu.writeto(file_path)
 
     return str(file_path)
-
 
 @pytest.fixture
 def mock_cadc():
@@ -50,3 +50,13 @@ def mock_cadc():
         mock_instance.query_region.return_value = results
         mock_instance.get_data_urls.return_value = ["http://fake/NEOSSAT_CORD_001.fits"]
         yield mock_instance
+
+@pytest.fixture
+def email_service(monkeypatch):
+    """
+    Fixture to mock the EmailService.
+    """
+    monkeypatch.setenv("SMTP_SERVER", "smtp.gmail.com")
+    monkeypatch.setenv("SMTP_USER", "sender@gmail.com")
+    monkeypatch.setenv("SMTP_PASSWORD", "password")
+    return EmailService()

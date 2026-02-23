@@ -6,6 +6,14 @@ from core.data_manager import DataManager
 def main():
     print("Welcome to the NEOSSat Astronomy Image Analysis!")
     while True:
+        print("Enter a valid email address to receive notifications:")
+        email = input("Email: ")
+        if "@" in email and "." in email:
+            print(f"Email '{email}' accepted.")
+            break
+        else:            
+            print("Invalid email address. Please try again.")
+
         print("Select a valid directory containing the data you want to analyze:")
         data_directory = input("Enter the path to the data directory: ")
         manager = DataDirectoryManager(data_directory)
