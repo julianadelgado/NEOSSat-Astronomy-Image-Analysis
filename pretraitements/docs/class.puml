@@ -1,0 +1,57 @@
+@startuml class
+skinparam classAttributeIconSize 0
+
+class FastAPIApp {
+    +run_preprocessing(req: PreprocessRequest)
+    +health()
+    +catalog()
+}
+
+class Pipeline {
+    -preprocessors: Dict<String, IPreprocessor>
+    -metrics: Metrics
+    +run(fits_path: Path, selected: List<String>, output_dir: Path) : Dict
+}
+
+class Metrics {
+    -total_time: float
+    -count: int
+    +register(duration: float)
+    +average_time() : float
+}
+
+package Core {
+
+	interface IPreprocessor {
+		+name() : str
+		+run(image, header, output_dir: Path) : dict
+	}
+
+	class PreprocessRequest {
+		-fits_file: str
+		-preprocessors: List<String>
+	}
+}
+
+package Preprocessors {
+	class StarDetectionPreprocessor {
+		+name() : str
+		+run(image, header, output_dir: Path) : dict
+	}
+
+	class FitsToPngPreprocessor {
+		+name() : str
+		+run(image, header, output_dir: Path) : dict
+	}
+}
+
+
+
+FastAPIApp --> Pipeline
+Pipeline --> IPreprocessor : uses
+IPreprocessor <|-- StarDetectionPreprocessor
+IPreprocessor <|-- FitsToPngPreprocessor
+Pipeline --> Metrics : uses
+FastAPIApp --> PreprocessRequest : accepts
+
+@enduml
