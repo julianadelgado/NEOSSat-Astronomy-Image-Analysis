@@ -1,11 +1,13 @@
 from pathlib import Path
-import numpy as np # pyright: ignore[reportMissingImports]
-import matplotlib # pyright: ignore[reportMissingModuleSource]
+import numpy as np  # pyright: ignore[reportMissingImports]
+import matplotlib  # pyright: ignore[reportMissingModuleSource]
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt # pyright: ignore[reportMissingModuleSource]
-from astropy.io import fits # pyright: ignore[reportMissingImports]
+import matplotlib.pyplot as plt  # pyright: ignore[reportMissingModuleSource]
+from astropy.io import fits  # pyright: ignore[reportMissingImports]
 
 from pretraitements.core.IPreprocessor import IPreprocessor
+
 
 class FitsToPngPreprocessor(IPreprocessor):
     """Convertit un fichier FITS en PNG normalisé (0-1) pour visualisation."""
@@ -27,6 +29,6 @@ class FitsToPngPreprocessor(IPreprocessor):
         if max_val != 0:
             img_data /= max_val
 
-        plt.imsave(str(png_path), img_data, cmap='gray')
+        plt.imsave(str(png_path), img_data, cmap="gray")
 
         return {"png_saved": str(png_path)}

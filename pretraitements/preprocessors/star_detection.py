@@ -1,15 +1,17 @@
 from pathlib import Path
 import csv
-import numpy as np # pyright: ignore[reportMissingImports]
-from astropy.wcs import WCS # pyright: ignore[reportMissingImports]
-from astropy.stats import sigma_clipped_stats # pyright: ignore[reportMissingImports]
-from photutils.detection import DAOStarFinder # pyright: ignore[reportMissingImports]
+import numpy as np  # pyright: ignore[reportMissingImports]
+from astropy.wcs import WCS  # pyright: ignore[reportMissingImports]
+from astropy.stats import sigma_clipped_stats  # pyright: ignore[reportMissingImports]
+from photutils.detection import DAOStarFinder  # pyright: ignore[reportMissingImports]
 
-import matplotlib # pyright: ignore[reportMissingModuleSource]
+import matplotlib  # pyright: ignore[reportMissingModuleSource]
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt # pyright: ignore[reportMissingModuleSource]
+import matplotlib.pyplot as plt  # pyright: ignore[reportMissingModuleSource]
 
 from pretraitements.core.IPreprocessor import IPreprocessor
+
 
 class StarDetectionPreprocessor(IPreprocessor):
 
@@ -20,14 +22,14 @@ class StarDetectionPreprocessor(IPreprocessor):
         wcs = WCS(header)
 
         mean, median, std = sigma_clipped_stats(image, sigma=3.0)
-        daofind = DAOStarFinder(fwhm=3.0, threshold=5. * std)
+        daofind = DAOStarFinder(fwhm=3.0, threshold=5.0 * std)
         sources = daofind(image - median)
 
         if sources is None:
             return {"stars_detected": 0}
 
-        x = sources['xcentroid']
-        y = sources['ycentroid']
+        x = sources["xcentroid"]
+        y = sources["ycentroid"]
         world = wcs.pixel_to_world(x, y)
         ra = world.ra.deg
         dec = world.dec.deg
@@ -43,15 +45,19 @@ class StarDetectionPreprocessor(IPreprocessor):
         # Image annotée
         fig = plt.figure(figsize=(10, 10))
         ax = plt.subplot(projection=wcs)
-        ax.imshow(image, cmap='gray', origin='lower',
-                  vmin=np.percentile(image, 5),
-                  vmax=np.percentile(image, 99))
+        ax.imshow(
+            image,
+            cmap="gray",
+            origin="lower",
+            vmin=np.percentile(image, 5),
+            vmax=np.percentile(image, 99),
+        )
 
         for xi, yi in zip(x, y):
-            ax.plot(xi, yi, marker='o', markersize=5, color='red', fillstyle='none')
+            ax.plot(xi, yi, marker="o", markersize=5, color="red", fillstyle="none")
 
         img_path = output_dir / "image_etoiles_detectees.png"
-        plt.savefig(img_path, dpi=300, bbox_inches='tight')
+        plt.savefig(img_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
 
         return {"stars_detected": len(x)}

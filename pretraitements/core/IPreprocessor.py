@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-import numpy as np # pyright: ignore[reportMissingImports]
+import numpy as np  # pyright: ignore[reportMissingImports]
+
 
 class IPreprocessor(ABC):
     @abstractmethod

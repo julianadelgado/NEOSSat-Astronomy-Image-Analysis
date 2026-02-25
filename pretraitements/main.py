@@ -1,4 +1,4 @@
-from fastapi import FastAPI # pyright: ignore[reportMissingImports]
+from fastapi import FastAPI  # pyright: ignore[reportMissingImports]
 
 from pathlib import Path
 
@@ -15,28 +15,28 @@ app = FastAPI()
 metrics = Metrics()
 
 pipeline = Pipeline(
-    preprocessors=[
-        StarDetectionPreprocessor(),
-		FitsToPngPreprocessor()
-    ],
-    metrics=metrics
+    preprocessors=[StarDetectionPreprocessor(), FitsToPngPreprocessor()],
+    metrics=metrics,
 )
+
 
 @app.post("/pretraitements")
 def run_preprocessing(req: PreprocessRequest):
     results = pipeline.run(
         fits_path=Path(req.fits_file),
         selected=req.preprocessors,
-        output_dir=Path("results")
+        output_dir=Path("results"),
     )
     return {"status": "ok", "results": results}
+
 
 @app.get("/health")
 def health():
     return {
         "status": "running",
-        "average_preprocessing_time_sec": metrics.average_time()
+        "average_preprocessing_time_sec": metrics.average_time(),
     }
+
 
 @app.get("/catalog")
 def catalog():
