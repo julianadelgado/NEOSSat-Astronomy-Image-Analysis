@@ -1,11 +1,6 @@
 from pathlib import Path
 
-import matplotlib  # pyright: ignore[reportMissingModuleSource]
-import numpy as np  # pyright: ignore[reportMissingImports]
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # pyright: ignore[reportMissingModuleSource]
-from astropy.io import fits  # pyright: ignore[reportMissingImports]
+import numpy as np
 
 from pretraitements.core.IPreprocessor import IPreprocessor
 
@@ -29,6 +24,13 @@ class FitsToPng(IPreprocessor):
         max_val = np.max(img_data)
         if max_val != 0:
             img_data /= max_val
+
+        # Configure matplotlib backend and import pyplot locally to avoid
+        # module-level side-effects that trigger flake8 E402.
+        import matplotlib as _matplotlib
+
+        _matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
 
         plt.imsave(str(png_path), img_data, cmap="gray")
 

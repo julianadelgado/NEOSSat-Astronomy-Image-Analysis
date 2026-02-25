@@ -2,7 +2,7 @@ import time
 from pathlib import Path
 from typing import Dict, List
 
-from astropy.io import fits  # pyright: ignore[reportMissingImports]
+from astropy.io import fits
 
 from pretraitements.core.IPreprocessor import IPreprocessor
 from pretraitements.metrics import Metrics
@@ -14,7 +14,12 @@ class Pipeline:
         self.preprocessors = {p.name(): p for p in preprocessors}
         self.metrics = metrics
 
-    def run(self, fits_path: Path, selected: List[str], output_dir: Path) -> Dict:
+    def run(
+        self,
+        fits_path: Path,
+        selected: List[str],
+        output_dir: Path,
+    ) -> Dict:
         image = fits.getdata(fits_path)
         header = fits.getheader(fits_path)
 

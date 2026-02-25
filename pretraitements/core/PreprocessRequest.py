@@ -1,4 +1,4 @@
-from pydantic import BaseModel  # pyright: ignore[reportMissingImports]
+from pydantic import BaseModel
 
 
 class PreprocessRequest(BaseModel):

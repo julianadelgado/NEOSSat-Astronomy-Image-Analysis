@@ -1,15 +1,10 @@
 import csv
 from pathlib import Path
 
-import matplotlib  # pyright: ignore[reportMissingModuleSource]
-import matplotlib.pyplot as plt  # pyright: ignore[reportMissingModuleSource]
-import numpy as np  # pyright: ignore[reportMissingImports]
+import numpy as np
 from astropy.stats import sigma_clipped_stats
-from astropy.wcs import WCS  # pyright: ignore[reportMissingImports]
+from astropy.wcs import WCS
 from photutils.detection import DAOStarFinder
-
-matplotlib.use("Agg")
-
 
 from pretraitements.core.IPreprocessor import IPreprocessor
 
@@ -23,7 +18,10 @@ class StarDetection(IPreprocessor):
         wcs = WCS(header)
 
         mean, median, std = sigma_clipped_stats(image, sigma=3.0)
-        daofind = DAOStarFinder(fwhm=3.0, threshold=5.0 * std)
+        daofind = DAOStarFinder(
+            fwhm=3.0,
+            threshold=5.0 * std,
+        )
         sources = daofind(image - median)
 
         if sources is None:
@@ -39,11 +37,20 @@ class StarDetection(IPreprocessor):
         csv_path = output_dir / "etoiles_detectees.csv"
         with open(csv_path, mode="w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["id", "x_pixel", "y_pixel", "ra_deg", "dec_deg"])
-            for i, (xi, yi, rai, deci) in enumerate(zip(x, y, ra, dec), start=1):
+            header = ["id", "x_pixel", "y_pixel", "ra_deg", "dec_deg"]
+            writer.writerow(header)
+            enum = enumerate(zip(x, y, ra, dec))
+            for i, (xi, yi, rai, deci) in enum:
                 writer.writerow([i, xi, yi, rai, deci])
 
         # Image annotée
+        # Imports déplacés ici pour gérer black, isort et flake8, à discuter
+        # AB - 25/02/2026
+        import matplotlib as _matplotlib
+
+        _matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
         fig = plt.figure(figsize=(10, 10))
         ax = plt.subplot(projection=wcs)
         ax.imshow(
@@ -55,7 +62,14 @@ class StarDetection(IPreprocessor):
         )
 
         for xi, yi in zip(x, y):
-            ax.plot(xi, yi, marker="o", markersize=5, color="red", fillstyle="none")
+            ax.plot(
+                xi,
+                yi,
+                marker="o",
+                markersize=5,
+                color="red",
+                fillstyle="none",
+            )
 
         img_path = output_dir / "image_etoiles_detectees.png"
         plt.savefig(img_path, dpi=300, bbox_inches="tight")

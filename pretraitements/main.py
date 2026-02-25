@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI  # pyright: ignore[reportMissingImports]
+from fastapi import FastAPI
 
 from pretraitements.core.PreprocessRequest import PreprocessRequest
 from pretraitements.metrics import Metrics
