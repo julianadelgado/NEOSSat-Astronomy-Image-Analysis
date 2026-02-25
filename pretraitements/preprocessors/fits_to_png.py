@@ -10,7 +10,7 @@ from astropy.io import fits  # pyright: ignore[reportMissingImports]
 from pretraitements.core.IPreprocessor import IPreprocessor
 
 
-class FitsToPngPreprocessor(IPreprocessor):
+class FitsToPng(IPreprocessor):
     """Convertit un fichier FITS en PNG normalisé (0-1) pour visualisation."""
 
     def name(self) -> str:

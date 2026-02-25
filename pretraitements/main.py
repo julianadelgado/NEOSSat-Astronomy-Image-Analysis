@@ -5,15 +5,15 @@ from fastapi import FastAPI  # pyright: ignore[reportMissingImports]
 from pretraitements.core.PreprocessRequest import PreprocessRequest
 from pretraitements.metrics import Metrics
 from pretraitements.pipeline import Pipeline
-from pretraitements.preprocessors.fits_to_png import FitsToPngPreprocessor
-from pretraitements.preprocessors.star_detection import StarDetectionPreprocessor
+from pretraitements.preprocessors.fits_to_png import FitsToPng
+from pretraitements.preprocessors.star_detection import StarDetection
 
 app = FastAPI()
 
 metrics = Metrics()
 
 pipeline = Pipeline(
-    preprocessors=[StarDetectionPreprocessor(), FitsToPngPreprocessor()],
+    preprocessors=[StarDetection(), FitsToPng()],
     metrics=metrics,
 )
 
