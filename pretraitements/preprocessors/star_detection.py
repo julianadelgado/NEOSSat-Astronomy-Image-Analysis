@@ -1,12 +1,12 @@
 import csv
 from pathlib import Path
 
+import matplotlib  # pyright: ignore[reportMissingModuleSource]
 import numpy as np  # pyright: ignore[reportMissingImports]
-from astropy.wcs import WCS  # pyright: ignore[reportMissingImports]
 from astropy.stats import sigma_clipped_stats  # pyright: ignore[reportMissingImports]
+from astropy.wcs import WCS  # pyright: ignore[reportMissingImports]
 from photutils.detection import DAOStarFinder  # pyright: ignore[reportMissingImports]
 
-import matplotlib  # pyright: ignore[reportMissingModuleSource]
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # pyright: ignore[reportMissingModuleSource]
 

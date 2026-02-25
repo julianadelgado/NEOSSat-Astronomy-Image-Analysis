@@ -1,8 +1,8 @@
 from pathlib import Path
 
+import matplotlib  # pyright: ignore[reportMissingModuleSource]
 import numpy as np  # pyright: ignore[reportMissingImports]
 
-import matplotlib  # pyright: ignore[reportMissingModuleSource]
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # pyright: ignore[reportMissingModuleSource]
 from astropy.io import fits  # pyright: ignore[reportMissingImports]
