@@ -1,6 +1,7 @@
 import time
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List
+
 from astropy.io import fits  # pyright: ignore[reportMissingImports]
 
 from pretraitements.core.IPreprocessor import IPreprocessor
