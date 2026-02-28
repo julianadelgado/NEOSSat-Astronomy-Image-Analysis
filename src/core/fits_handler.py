@@ -35,7 +35,7 @@ class FitsHandler:
                     if os.path.exists(output_file):
                         continue
                     
-                    tmp_path = download_file(url, cache=True, show_progress=False)
+                    tmp_path = download_file(url, show_progress=False)
                     shutil.move(tmp_path, output_file)
                     
                 except Exception as inner_e:

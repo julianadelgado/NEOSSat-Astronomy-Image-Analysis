@@ -14,6 +14,7 @@ def main():
         else:            
             print("Invalid email address. Please try again.")
 
+    while True:
         print("Select a valid directory containing the data you want to analyze:")
         data_directory = input("Enter the path to the data directory: ")
         manager = DataDirectoryManager(data_directory)
@@ -35,12 +36,10 @@ def main():
                 print(f"Coordinates Found: {sky_coord.to_string('hmsdms')}")
                 
                 clean_name = filename.replace('.fits', '')
-                save_path = os.path.join(clean_name, "training")
-                os.makedirs(save_path, exist_ok=True)
+                os.makedirs(clean_name, exist_ok=True)
                 
                 downloader = FitsHandler(sky_coord)
-                downloader.download_images_to_directory(save_path)
-            
+                downloader.download_images_to_directory(clean_name)
             data_manager.fits_image.close()
         
 if __name__ == '__main__':
