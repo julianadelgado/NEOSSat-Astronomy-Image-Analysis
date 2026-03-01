@@ -1,10 +1,11 @@
-import pytest
-import numpy as np
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from pretraitements.pipeline import Pipeline
+import numpy as np
+import pytest
+
 from pretraitements.metrics import Metrics
+from pretraitements.pipeline import Pipeline
 
 
 def test_pipeline_runs_selected_preprocessor(tmp_path):

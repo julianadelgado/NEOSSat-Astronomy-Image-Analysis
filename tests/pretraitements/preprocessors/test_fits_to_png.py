@@ -1,5 +1,6 @@
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 from pretraitements.preprocessors.fits_to_png import FitsToPng
 

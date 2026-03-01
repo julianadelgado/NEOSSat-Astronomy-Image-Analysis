@@ -1,5 +1,6 @@
+from unittest.mock import MagicMock, patch
+
 import numpy as np
-from unittest.mock import patch, MagicMock
 
 from pretraitements.preprocessors.star_detection import StarDetection
 
