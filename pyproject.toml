@@ -12,6 +12,7 @@ dependencies = [
     "opencv-python>=4.13.0.92",
     "pandas>=2.0.3",
     "photutils>=1.8.0",
+    "pytest>=8.3.5",
     "requests>=2.32.4",
     "scipy>=1.10.1",
     "seaborn>=0.13.2",
@@ -19,6 +20,9 @@ dependencies = [
     "torchvision==0.14.1",
     "tqdm>=4.67.3",
 ]
+
+[tool.uv]
+package = false
 
 [project.optional-dependencies]
 dev = [
@@ -34,3 +38,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["pretraitements", "detectors"]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+

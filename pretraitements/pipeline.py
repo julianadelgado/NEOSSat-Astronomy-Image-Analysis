@@ -20,6 +20,11 @@ class Pipeline:
         selected: List[str],
         output_dir: Path,
     ) -> Dict:
+
+        for name in selected:
+            if name not in self.preprocessors:
+                raise ValueError(f"Pré-traitement inconnu: {name}")
+
         image = fits.getdata(fits_path)
         header = fits.getheader(fits_path)
 
@@ -28,9 +33,7 @@ class Pipeline:
         results = {}
 
         for name in selected:
-            preprocessor = self.preprocessors.get(name)
-            if not preprocessor:
-                raise ValueError(f"Pré-traitement inconnu: {name}")
+            preprocessor = self.preprocessors[name]
 
             start = time.perf_counter()
             metadata = preprocessor.run(image, header, output_dir)

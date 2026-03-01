@@ -1257,7 +1257,7 @@ wheels = [
 [[package]]
 name = "neossat-astronomy-image-analysis"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "astropy" },
     { name = "fastapi", extra = ["standard"] },
@@ -1266,6 +1266,7 @@ dependencies = [
     { name = "opencv-python" },
     { name = "pandas" },
     { name = "photutils" },
+    { name = "pytest" },
     { name = "requests" },
     { name = "scipy", version = "1.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
@@ -1294,6 +1295,7 @@ requires-dist = [
     { name = "opencv-python", specifier = ">=4.13.0.92" },
     { name = "pandas", specifier = ">=2.0.3" },
     { name = "photutils", specifier = ">=1.8.0" },
+    { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "requests", specifier = ">=2.32.4" },
     { name = "scipy", specifier = ">=1.10.1" },

@@ -4,3 +4,6 @@ results
 .vscode
 
 **/__pycache__
+.pytest_cache
+*.egg-info/
+neossat_astronomy_image_analysis.egg-info/
