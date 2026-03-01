@@ -1,8 +1,13 @@
 [project]
 name = "neossat-astronomy-image-analysis"
 version = "0.1.0"
-description = "Traitements et analyses d’images astronomiques du sattelite NEOSSat"
-requires-python = ">=3.12"
+description = "Tools for NEOSSat astronomy image analysis and processing"
+readme = "README.md"
+requires-python = ">=3.8"
+
+authors = [
+    { name = "" }
+]
 
 dependencies = [
     "astropy==6.0.1",
@@ -14,8 +19,16 @@ dependencies = [
     "pydantic==2.6.4"
 ]
 
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort",
+    "flake8",
+    "pytest"
+]
+
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
