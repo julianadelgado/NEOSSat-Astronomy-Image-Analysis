@@ -1,6 +1,7 @@
+from typing import List
 from pydantic import BaseModel
 
 
 class PreprocessRequest(BaseModel):
     fits_file: str
-    preprocessors: list[str]
+    preprocessors: List[str]
