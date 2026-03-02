@@ -99,7 +99,7 @@ class DLStreakDetector(IDetector):
             view_img=False,
             save_txt=True,
             save_conf=True,
-            nosave=False,  # Maybe allow saving? User said "results outputed to a folder named result_data"
+            nosave=False, 
             classes=None,
             agnostic_nms=False,
             augment=False,
