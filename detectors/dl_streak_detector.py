@@ -1,5 +1,6 @@
 import argparse
 import sys
+import shutil
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -81,8 +82,6 @@ class DLStreakDetector(IDetector):
                             filename=f"{file_path.stem}.png",
                         )
                 elif file_path.suffix.lower() in [".jpg", ".png", ".jpeg"]:
-                    import shutil
-
                     png_path = INFERENCE_DATA_DIR / file_path.name
                     shutil.copy(file_path, png_path)
             except Exception as e:

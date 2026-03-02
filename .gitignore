@@ -1,7 +1,7 @@
 data
 results
 inference_data
-results_data
+result_data
 
 .vscode
 traced_model.pt
