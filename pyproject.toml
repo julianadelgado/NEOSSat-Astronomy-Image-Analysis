@@ -17,6 +17,7 @@ dependencies = [
     "matplotlib",
     "numpy",
     "astroquery",
+    "astroalign>=2.6.1",
 ]
 
 [project.optional-dependencies]
