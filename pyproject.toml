@@ -1,10 +1,23 @@
 [project]
-name = "NEOSSat-Astronomy-Image-Analysis"
+name = "neossat-astronomy-image-analysis"
 version = "0.1.0"
-description = "Tools for NEOSSat astronomy image analysis"
-authors = [ { name = "" } ]
+description = "Tools for NEOSSat astronomy image analysis and processing"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
+
+authors = [
+    { name = "" }
+]
+
+dependencies = [
+    "astropy==6.0.1",
+    "photutils==1.12.0",
+    "numpy==1.26.4",
+    "matplotlib==3.8.4",
+    "fastapi==0.110.0",
+    "uvicorn[standard]==0.29.0",
+    "pydantic==2.6.4"
+]
 
 [project.optional-dependencies]
 dev = [
@@ -15,5 +28,8 @@ dev = [
 ]
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
