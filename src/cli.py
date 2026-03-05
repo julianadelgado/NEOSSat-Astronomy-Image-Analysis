@@ -32,16 +32,18 @@ def main():
             
             data_manager = DataManager(file_path)
             sky_coord = data_manager.get_coordinates()
+            date_obs = data_manager.get_images_same_date()
             
-            if sky_coord:
+            if sky_coord and date_obs:
                 print(f"Coordinates Found: {sky_coord.to_string('hmsdms')}")
+                print(f"Observation Date: {date_obs}")
                 
                 clean_name = filename.replace('.fits', '')
                 os.makedirs(clean_name, exist_ok=True)
                 
-                downloader = FitsHandler(sky_coord)
+                downloader = FitsHandler(sky_coord, date_obs)
                 downloader.download_images_to_directory(clean_name)
-                preprocessor = ImageStacking(clean_name, data_manager)
+                preprocessor = ImageStacking(clean_name, data_manager, date_obs)
                 preprocessor.stack_images()
             data_manager.fits_image.close()
         

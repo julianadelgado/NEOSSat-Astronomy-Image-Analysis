@@ -34,20 +34,16 @@ class DataManager:
             print(f"Error retrieving coordinates: {e}")
             return None
         
-    def get_images_same_date(self, all_images_path):
+    def get_images_same_date(self):
+        if self.fits_image is None: return None
         try:
-            current_header = self.fits_image[0].header
-            current_date_obs = current_header.get('DATE-OBS')
-            current_date_obs = current_date_obs.split('T')[0]
-            images_same_date = []
-            for filename in os.listdir(all_images_path):
-                if filename.endswith('.fits'):
-                    img = fits.open(os.path.join(all_images_path, filename))
-                    date_obs = img[0].header.get('DATE-OBS')
-                    date_obs = date_obs.split('T')[0]
-                    if current_date_obs == date_obs:
-                        images_same_date.append(img)
-            return images_same_date
+            header = self.fits_image[0].header
+            date_obs = header.get('DATE-OBS') or header.get('DATE')
+            if date_obs is None:
+                print("Observation date not found in metadata.")
+                return None
+            else:
+                return date_obs.split('T')[0]
         except Exception as e:
             print(f"Error retrieving images by date: {e}")
             return {}
