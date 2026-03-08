@@ -1,4 +1,5 @@
 import pytest
+
 from acquisition.directory_manager import DataDirectoryManager
 
 

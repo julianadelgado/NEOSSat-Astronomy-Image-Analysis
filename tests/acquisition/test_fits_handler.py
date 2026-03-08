@@ -1,7 +1,9 @@
 import os
-import pytest
-from acquisition.fits_handler import FitsHandler
 from unittest.mock import MagicMock
+
+import pytest
+
+from acquisition.fits_handler import FitsHandler
 
 
 def test_download_images_to_directory_valid(mock_cadc, tmp_path):

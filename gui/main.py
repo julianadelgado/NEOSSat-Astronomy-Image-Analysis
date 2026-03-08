@@ -1,41 +1,42 @@
-import sys
-import os
 import ftplib
+import os
+import sys
+
 import numpy as np
 import requests
-from PyQt6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QWidget,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTabWidget,
-    QLabel,
-    QLineEdit,
-    QPushButton,
-    QListWidget,
-    QMessageBox,
-    QProgressBar,
-    QComboBox,
-    QCheckBox,
-    QDoubleSpinBox,
-    QGroupBox,
-    QStackedWidget,
-    QAbstractItemView,
-    QListWidgetItem,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QSizePolicy,
-)
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
-from astropy.io import fits
-from astroquery.skyview import SkyView
-from astroquery.cadc import Cadc
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.io import fits
+from astroquery.cadc import Cadc
+from astroquery.skyview import SkyView
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMainWindow,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QSizePolicy,
+    QStackedWidget,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
 
 # --- Threads ---
 

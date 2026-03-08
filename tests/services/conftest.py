@@ -1,4 +1,5 @@
 import pytest
+
 from services.email_service import EmailService
 
 

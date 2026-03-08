@@ -1,7 +1,8 @@
-import pytest
+from unittest.mock import MagicMock, patch
+
 import numpy as np
+import pytest
 from astropy.io import fits
-from unittest.mock import patch, MagicMock
 
 
 @pytest.fixture

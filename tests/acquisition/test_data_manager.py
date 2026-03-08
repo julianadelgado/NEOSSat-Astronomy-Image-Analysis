@@ -1,4 +1,5 @@
 import pytest
+
 from acquisition.data_manager import DataManager
 
 

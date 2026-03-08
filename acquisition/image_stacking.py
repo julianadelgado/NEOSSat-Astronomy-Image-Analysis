@@ -1,0 +1,78 @@
+import os
+
+import astroalign as aa
+import numpy as np
+from astropy.io import fits
+from core.data_manager import DataManager
+from PIL import Image
+
+
+class ImageStacking:
+    def __init__(self, images_path, data_manager, date_obs):
+        self.images_path = images_path
+        self.data_manager = data_manager
+        self.date_obs = date_obs
+
+    def stack_images(self):
+        all_images = [f for f in os.listdir(self.images_path) if f.endswith(".fits")]
+        output_dir = os.path.join(self.images_path, "stacked")
+        os.makedirs(output_dir, exist_ok=True)
+
+        data_arrays = []
+        reference_data = None
+
+        for img_name in all_images:
+            img_path = os.path.join(self.images_path, img_name)
+            try:
+                with fits.open(img_path) as img_fits:
+                    header = img_fits[0].header
+                    img_date = header.get("DATE-OBS", "").split("T")[0]
+
+                    if img_date != self.date_obs:
+                        continue
+
+                    current_data = img_fits[0].data.astype(np.float64)
+                    time_obs = (
+                        header.get("TIME-OBS", "00-00-00")
+                        .split(".")[0]
+                        .replace(":", "-")
+                    )
+                    before_stack_path = os.path.join(
+                        self.images_path,
+                        "before",
+                        f"{self.date_obs}__{time_obs}__{img_name.replace('.fits', '.png')}",
+                    )
+                    self.data_manager.fits_to_png(before_stack_path)
+
+                    if reference_data is None:
+                        reference_data = current_data
+                        data_arrays.append(current_data)
+                    else:
+                        try:
+                            aligned_image, footprint = aa.register(
+                                current_data, reference_data
+                            )
+                            data_arrays.append(aligned_image)
+                        except Exception as e:
+                            print(f"Error aligning image {img_name}: {e}")
+            except Exception as e:
+                print(f"Error opening FITS file {img_name}: {e}")
+                continue
+
+        if len(data_arrays) > 1:
+            print(f"Stacking {len(all_images)} images for {self.date_obs}...")
+
+            stacked_data = np.nanmax(data_arrays, axis=0)
+
+            vmin, vmax = np.percentile(stacked_data, [1, 99.9])
+            stacked_scaled = np.clip(
+                (stacked_data - vmin) / (vmax - vmin) * 255, 0, 255
+            )
+            stacked_output = stacked_scaled.astype(np.uint8)
+
+            stacked_image = Image.fromarray(stacked_output)
+            output_path = os.path.join(output_dir, f"stacked_{self.date_obs}.png")
+            stacked_image.save(output_path)
+            print(f"Stacked image saved: {output_path}")
+        else:
+            print(f"Only one image for date {self.date_obs}, skipping stacking.")
