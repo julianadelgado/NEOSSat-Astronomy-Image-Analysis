@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 
 def test_health_endpoint():
-    from pretraitements import main
+    from api import main
 
     client = TestClient(main.app)
     response = client.get("/health")
@@ -17,7 +17,7 @@ def test_health_endpoint():
 
 
 def test_catalog_endpoint():
-    from pretraitements import main
+    from api import main
 
     client = TestClient(main.app)
     response = client.get("/catalog")
@@ -27,11 +27,11 @@ def test_catalog_endpoint():
 
 
 def test_run_preprocessing_endpoint():
-    from pretraitements import main
+    from api import main
 
     client = TestClient(main.app)
 
-    pipeline_path = "pretraitements.main.pipeline"
+    pipeline_path = "api.main.pipeline"
     with patch(pipeline_path) as mock_pipeline:
         mock_pipeline.run.return_value = {
             "star_detection": {
@@ -44,7 +44,7 @@ def test_run_preprocessing_endpoint():
             "preprocessors": ["star_detection"],
         }
 
-        response = client.post("/pretraitements", json=payload)
+        response = client.post("/preprocessing", json=payload)
 
     assert response.status_code == 200
     data = response.json()

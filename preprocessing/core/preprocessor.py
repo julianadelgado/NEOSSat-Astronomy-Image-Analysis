@@ -7,13 +7,13 @@ import numpy as np
 class IPreprocessor(ABC):
     @abstractmethod
     def name(self) -> str:
-        """Nom unique du pré-traitement"""
+        """Unique name of the preprocessor"""
         pass
 
     @abstractmethod
     def run(self, image: np.ndarray, header, output_dir: Path) -> dict:
         """
-        Exécute le pré-traitement.
-        Retourne un dictionnaire de données (ex: nombre d'étoiles détectées).
+        Runs the preprocessor.
+        Returns a dictionary of result metadata (e.g. number of stars detected).
         """
         pass

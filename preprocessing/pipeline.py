@@ -4,8 +4,8 @@ from typing import Dict, List
 
 from astropy.io import fits
 
-from pretraitements.core.IPreprocessor import IPreprocessor
-from pretraitements.metrics import Metrics
+from preprocessing.core.preprocessor import IPreprocessor
+from preprocessing.metrics import Metrics
 
 
 class Pipeline:

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 
-from pretraitements.preprocessors.fits_to_png import FitsToPng
+from preprocessing.preprocessors.fits_to_png import FitsToPng
 
 
 def test_fits_to_png_creates_png(tmp_path):

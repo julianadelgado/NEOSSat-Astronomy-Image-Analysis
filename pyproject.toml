@@ -1,31 +1,42 @@
 [project]
 name = "neossat-astronomy-image-analysis"
 version = "0.1.0"
-description = "Tools for NEOSSat astronomy image analysis and processing"
+description = "Tool for NEOSSat astronomy image analysis and processing"
+authors = [ 
+    { name = "Arthur Boulay" },
+    { name = "Juliana Delgado-Theophanides" },
+    { name = "Emmanuelle Fontaine" },
+    { name = "Khalil Krayem" }
+]
 readme = "README.md"
 requires-python = ">=3.10"
 
-authors = [
-    { name = "" }
-]
-
 dependencies = [
     "astropy==6.0.1",
-    "photutils==1.12.0",
     "numpy==1.26.4",
+]
+
+[project.optional-dependencies]
+cli = [ "astroquery" ]
+api = [
     "matplotlib==3.8.4",
+    "photutils==1.12.0",
     "fastapi==0.110.0",
     "uvicorn[standard]==0.29.0",
     "pydantic==2.6.4"
 ]
-
-[project.optional-dependencies]
-dev = [
-    "black",
-    "isort",
-    "flake8",
-    "pytest"
+gui = [
+    "PyQt6",
+    "astroquery",
+    "requests",
+    "matplotlib==3.8.4",
 ]
+dev = [ "black", "isort", "flake8", "pytest", "httpx>=0.23.0,<0.28.0" ]
+
+[project.scripts]
+neossat-api = "api.main:start"
+neossat-cli = "cli.main:main"
+neossat-gui = "gui.main:main"
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
@@ -33,3 +44,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+

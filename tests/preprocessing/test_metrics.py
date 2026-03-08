@@ -1,4 +1,4 @@
-from pretraitements.metrics import Metrics
+from preprocessing.metrics import Metrics
 
 
 def test_average_time_initially_zero():
