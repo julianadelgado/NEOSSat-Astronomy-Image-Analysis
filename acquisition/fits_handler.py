@@ -1,7 +1,6 @@
 import os
 import shutil
 
-import numpy as np
 from astropy import units as unit
 from astropy.time import Time
 from astropy.utils.data import download_file
@@ -55,9 +54,8 @@ class FitsHandler:
 
             # Limit to 100
             subset = filtered_results[:100]
-            print(
-                f"Found {len(subset)} matching NEOSSat images. Retrieving download links..."
-            )
+            n = len(subset)
+            print(f"Found {n} matching NEOSSat images. Retrieving download links...")
 
             urls = self.cadc.get_data_urls(subset)
 

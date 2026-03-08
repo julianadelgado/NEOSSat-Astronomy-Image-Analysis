@@ -1,5 +1,3 @@
-import pytest
-
 from acquisition.data_manager import DataManager
 
 
@@ -16,7 +14,7 @@ def test_load_fits_image_invalid():
 
 def test_get_coordinates_valid(sample_fits_image):
     dm = DataManager(sample_fits_image)
-    coords = dm.get_coordinates(dm.fits_image)
+    coords = dm.get_coordinates()
     assert coords is not None
     assert coords.ra.deg == 120.5
     assert coords.dec.deg == 45.3

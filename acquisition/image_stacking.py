@@ -3,7 +3,6 @@ import os
 import astroalign as aa
 import numpy as np
 from astropy.io import fits
-from core.data_manager import DataManager
 from PIL import Image
 
 
@@ -37,10 +36,11 @@ class ImageStacking:
                         .split(".")[0]
                         .replace(":", "-")
                     )
+                    png_name = img_name.replace(".fits", ".png")
                     before_stack_path = os.path.join(
                         self.images_path,
                         "before",
-                        f"{self.date_obs}__{time_obs}__{img_name.replace('.fits', '.png')}",
+                        f"{self.date_obs}__{time_obs}__{png_name}",
                     )
                     self.data_manager.fits_to_png(before_stack_path)
 

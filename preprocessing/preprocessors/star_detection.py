@@ -44,7 +44,8 @@ class StarDetection(IPreprocessor):
                 writer.writerow([i, xi, yi, rai, deci])
 
         # Annotated image
-        # Imports placed here to avoid module-level side-effects flagged by black, isort, and flake8
+        # Imports placed here to avoid module-level side-effects
+        # flagged by black, isort, and flake8
         # AB - 25/02/2026
         import matplotlib as _matplotlib
 

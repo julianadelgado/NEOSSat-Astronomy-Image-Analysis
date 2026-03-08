@@ -3,6 +3,7 @@ import os
 from acquisition.data_manager import DataManager
 from acquisition.directory_manager import DataDirectoryManager
 from acquisition.fits_handler import FitsHandler
+from acquisition.image_stacking import ImageStacking
 
 
 def main():
@@ -34,7 +35,7 @@ def main():
             print(f"\nProcessing: {filename}")
 
             data_manager = DataManager(file_path)
-            sky_coord = data_manager.get_coordinates(data_manager.fits_image)
+            sky_coord = data_manager.get_coordinates()
             date_obs = data_manager.get_images_same_date()
 
             if sky_coord and date_obs:

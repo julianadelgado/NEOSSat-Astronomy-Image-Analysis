@@ -26,7 +26,7 @@ def mock_cadc():
     """
     Fixture to mock the CADC client.
     """
-    obs_id = "NEOSSAT_CORD_001"
+    obs_id = "NEOSSAT_2023001_CORD_001"
 
     row = MagicMock()
     row.__getitem__ = MagicMock(return_value=obs_id)
@@ -59,5 +59,7 @@ def mock_cadc():
     ):
         mock_instance = MockCadc.return_value
         mock_instance.query_region.return_value = results
-        mock_instance.get_data_urls.return_value = ["http://fake/NEOSSAT_CORD_001.fits"]
+        mock_instance.get_data_urls.return_value = [
+            "http://fake/NEOSSAT_2023001_CORD_001.fits"
+        ]
         yield mock_instance

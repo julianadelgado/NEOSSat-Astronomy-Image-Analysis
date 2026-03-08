@@ -29,7 +29,6 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
-    QSizePolicy,
     QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
@@ -94,7 +93,8 @@ class CadcSearchThread(QThread):
 
             coords = None
             if self.is_raw_degrees:
-                # User claims input is RA DEC in degrees (e.g. "240.5 -30.2" or "240.5, -30.2")
+                # User claims input is RA DEC in degrees
+                # (e.g. "240.5 -30.2" or "240.5, -30.2")
                 # Clean split
                 parts = self.target.replace(",", " ").split()
                 if len(parts) >= 2:
@@ -112,7 +112,7 @@ class CadcSearchThread(QThread):
                 # Standard auto-parsing
                 try:
                     coords = SkyCoord(self.target)
-                except:
+                except Exception:
                     coords = None
 
             if coords is not None:
@@ -291,7 +291,7 @@ class NeossatFtpStructureThread(QThread):
             if ftp:
                 try:
                     ftp.quit()
-                except:
+                except Exception:
                     pass
 
 
@@ -336,7 +336,7 @@ class FtpDownloadThread(QThread):
             if ftp:
                 try:
                     ftp.quit()
-                except:
+                except Exception:
                     pass
 
 
@@ -613,7 +613,7 @@ class DownloadTab(QWidget):
         self.cadc_dl_btn.setEnabled(False)
         self.progress_bar.setRange(0, 0)
         self.progress_bar.show()
-        self.status_label.setText(f"Searching CADC...")
+        self.status_label.setText("Searching CADC...")
         self.cadc_search_btn.setEnabled(False)
 
         self.cadc_s_thread = CadcSearchThread(target, radius, is_degree_mode)
