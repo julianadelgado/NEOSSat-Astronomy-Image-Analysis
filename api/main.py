@@ -1,12 +1,13 @@
 from pathlib import Path
 
+import uvicorn
 from fastapi import FastAPI
 
-from pretraitements.core.PreprocessRequest import PreprocessRequest
-from pretraitements.metrics import Metrics
-from pretraitements.pipeline import Pipeline
-from pretraitements.preprocessors.fits_to_png import FitsToPng
-from pretraitements.preprocessors.star_detection import StarDetection
+from preprocessing.core.preprocess_request import PreprocessRequest
+from preprocessing.metrics import Metrics
+from preprocessing.pipeline import Pipeline
+from preprocessing.preprocessors.fits_to_png import FitsToPng
+from preprocessing.preprocessors.star_detection import StarDetection
 
 app = FastAPI()
 
@@ -18,7 +19,7 @@ pipeline = Pipeline(
 )
 
 
-@app.post("/pretraitements")
+@app.post("/preprocessing")
 def run_preprocessing(req: PreprocessRequest):
     results = pipeline.run(
         fits_path=Path(req.fits_file),
@@ -38,5 +39,9 @@ def health():
 
 @app.get("/catalog")
 def catalog():
-    """Liste tous les pré-traitements disponibles"""
+    """List all available preprocessors"""
     return {"available_preprocessors": list(pipeline.preprocessors.keys())}
+
+
+def start():
+    uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=True)

@@ -6,7 +6,7 @@ from astropy.stats import sigma_clipped_stats
 from astropy.wcs import WCS
 from photutils.detection import DAOStarFinder
 
-from pretraitements.core.IPreprocessor import IPreprocessor
+from preprocessing.core.preprocessor import IPreprocessor
 
 
 class StarDetection(IPreprocessor):
@@ -33,8 +33,8 @@ class StarDetection(IPreprocessor):
         ra = world.ra.deg
         dec = world.dec.deg
 
-        # Écriture CSV
-        csv_path = output_dir / "etoiles_detectees.csv"
+        # Write CSV
+        csv_path = output_dir / "detected_stars.csv"
         with open(csv_path, mode="w", newline="") as f:
             writer = csv.writer(f)
             header = ["id", "x_pixel", "y_pixel", "ra_deg", "dec_deg"]
@@ -43,8 +43,9 @@ class StarDetection(IPreprocessor):
             for i, (xi, yi, rai, deci) in enum:
                 writer.writerow([i, xi, yi, rai, deci])
 
-        # Image annotée
-        # Imports déplacés ici pour gérer black, isort et flake8, à discuter
+        # Annotated image
+        # Imports placed here to avoid module-level side-effects
+        # flagged by black, isort, and flake8
         # AB - 25/02/2026
         import matplotlib as _matplotlib
 
@@ -71,7 +72,7 @@ class StarDetection(IPreprocessor):
                 fillstyle="none",
             )
 
-        img_path = output_dir / "image_etoiles_detectees.png"
+        img_path = output_dir / "detected_stars_img.png"
         plt.savefig(img_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
 

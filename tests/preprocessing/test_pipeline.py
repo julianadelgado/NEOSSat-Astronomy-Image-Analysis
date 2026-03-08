@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from pretraitements.metrics import Metrics
-from pretraitements.pipeline import Pipeline
+from preprocessing.metrics import Metrics
+from preprocessing.pipeline import Pipeline
 
 
 def test_pipeline_runs_selected_preprocessor(tmp_path):
@@ -19,8 +19,8 @@ def test_pipeline_runs_selected_preprocessor(tmp_path):
     metrics = Metrics()
     pipeline = Pipeline([mock_preprocessor], metrics)
 
-    getdata_path = "pretraitements.pipeline.fits.getdata"
-    getheader_path = "pretraitements.pipeline.fits.getheader"
+    getdata_path = "preprocessing.pipeline.fits.getdata"
+    getheader_path = "preprocessing.pipeline.fits.getheader"
 
     with (
         patch(getdata_path, return_value=fake_image),

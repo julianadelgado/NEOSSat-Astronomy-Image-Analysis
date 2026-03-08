@@ -2,19 +2,18 @@ from pathlib import Path
 
 import numpy as np
 
-from pretraitements.core.IPreprocessor import IPreprocessor
+from preprocessing.core.preprocessor import IPreprocessor
 
 
 class FitsToPng(IPreprocessor):
-    """Convertit un fichier FITS en PNG normalisé (0-1) pour visualisation."""
+    """Converts a FITS file to a normalized (0-1) PNG for visualization."""
 
     def name(self) -> str:
         return "fits_to_png"
 
     def run(self, image: np.ndarray, header, output_dir: Path) -> dict:
         """
-        Comme ce pré-traitement ne dépend pas directement du tableau,
-        on l'utilise pour générer un PNG de l'image FITS d'origine.
+        Generates a normalized PNG from the original FITS image data.
         """
         output_dir.mkdir(parents=True, exist_ok=True)
         png_path = output_dir / "image_normalisee.png"
