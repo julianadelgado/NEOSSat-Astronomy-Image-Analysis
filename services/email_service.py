@@ -12,9 +12,9 @@ class EmailService:
 
     def send_email(self, to_email, subject, body):
         msg = MIMEText(body)
-        msg['Subject'] = subject
-        msg['From'] = self.username
-        msg['To'] = to_email
+        msg["Subject"] = subject
+        msg["From"] = self.username
+        msg["To"] = to_email
 
         try:
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:

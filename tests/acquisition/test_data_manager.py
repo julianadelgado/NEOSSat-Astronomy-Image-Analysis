@@ -1,14 +1,17 @@
 import pytest
 from acquisition.data_manager import DataManager
 
+
 def test_load_fits_image_valid(sample_fits_image):
     dm = DataManager(sample_fits_image)
     assert dm.fits_image is not None
     assert len(dm.fits_image) > 0
 
+
 def test_load_fits_image_invalid():
     dm = DataManager("/invalid/file/path.fits")
     assert dm.fits_image is None
+
 
 def test_get_coordinates_valid(sample_fits_image):
     dm = DataManager(sample_fits_image)

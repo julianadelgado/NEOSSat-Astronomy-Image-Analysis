@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
+
 def test_send_email(email_service):
     with patch("services.email_service.smtplib.SMTP") as mock_smtp:
         mock_server = MagicMock()
