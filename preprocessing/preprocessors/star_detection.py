@@ -29,6 +29,7 @@ class StarDetection(IPreprocessor):
 
         x = sources["xcentroid"]
         y = sources["ycentroid"]
+        flux = sources["flux"]
         world = wcs.pixel_to_world(x, y)
         ra = world.ra.deg
         dec = world.dec.deg
@@ -37,11 +38,11 @@ class StarDetection(IPreprocessor):
         csv_path = output_dir / "detected_stars.csv"
         with open(csv_path, mode="w", newline="") as f:
             writer = csv.writer(f)
-            header = ["id", "x_pixel", "y_pixel", "ra_deg", "dec_deg"]
+            header = ["id", "x_pixel", "y_pixel", "ra_deg", "dec_deg", "flux"]
             writer.writerow(header)
-            enum = enumerate(zip(x, y, ra, dec))
-            for i, (xi, yi, rai, deci) in enum:
-                writer.writerow([i, xi, yi, rai, deci])
+            enum = enumerate(zip(x, y, ra, dec, flux))
+            for i, (xi, yi, rai, deci, fluxi) in enum:
+                writer.writerow([i, xi, yi, rai, deci, fluxi])
 
         # Annotated image
         # Imports placed here to avoid module-level side-effects
@@ -58,8 +59,8 @@ class StarDetection(IPreprocessor):
             image,
             cmap="gray",
             origin="lower",
-            vmin=np.percentile(image, 5),
-            vmax=np.percentile(image, 99),
+            vmin=float(np.percentile(image, 5)),
+            vmax=float(np.percentile(image, 99)),
         )
 
         for xi, yi in zip(x, y):
