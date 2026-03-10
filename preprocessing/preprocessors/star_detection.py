@@ -7,6 +7,7 @@ from astropy.wcs import WCS
 from photutils.detection import DAOStarFinder
 
 from preprocessing.core.preprocessor import IPreprocessor
+from preprocessing.core.queries import query_simbad
 
 
 class StarDetection(IPreprocessor):
@@ -38,11 +39,43 @@ class StarDetection(IPreprocessor):
         csv_path = output_dir / "detected_stars.csv"
         with open(csv_path, mode="w", newline="") as f:
             writer = csv.writer(f)
-            header = ["id", "x_pixel", "y_pixel", "ra_deg", "dec_deg", "flux"]
+            header = [
+                "id",
+                "x_pixel",
+                "y_pixel",
+                "ra_deg",
+                "dec_deg",
+                "flux",
+                "object_id",
+                "deviation"
+            ]
             writer.writerow(header)
             enum = enumerate(zip(x, y, ra, dec, flux))
-            for i, (xi, yi, rai, deci, fluxi) in enum:
-                writer.writerow([i, xi, yi, rai, deci, fluxi])
+
+            for star, (x_star, y_star, ra_star, dec_star, flux_star) in enum:
+
+                full_coord_string = f"{ra_star} {dec_star}"
+
+                print("[SIMBAD QUERY] ", full_coord_string)
+                identified_obj = query_simbad(full_coord_string, "2m")
+
+                if identified_obj is not None:
+                    id_star = identified_obj.object_id
+                    deviation_star = identified_obj.distance_arcsec
+                else:
+                    id_star = "not_found"
+                    deviation_star = "not_found"
+
+                writer.writerow([
+                    star,
+                    x_star,
+                    y_star,
+                    ra_star,
+                    dec_star,
+                    flux_star,
+                    id_star,
+                    deviation_star
+                ])
 
         # Annotated image
         # Imports placed here to avoid module-level side-effects
