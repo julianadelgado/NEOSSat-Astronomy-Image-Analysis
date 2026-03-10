@@ -21,8 +21,22 @@ pipeline = Pipeline(
 
 @app.post("/preprocessing")
 def run_preprocessing(req: PreprocessRequest):
+    req_path = Path(req.fits_file)
+
+    if not req_path.exists():
+        project_root = Path(__file__).resolve().parents[1]
+        candidate = project_root / req_path
+        if candidate.exists():
+            fits_path = candidate
+        else:
+            raise FileNotFoundError(
+                f"File {req.fits_file} not found in current directory or project root."
+            )
+    else:
+        fits_path = req_path
+
     results = pipeline.run(
-        fits_path=Path(req.fits_file),
+        fits_path=fits_path,
         selected=req.preprocessors,
         output_dir=Path("results"),
     )
