@@ -11,3 +11,5 @@ traced_model.pt
 *.egg-info/
 neossat_astronomy_image_analysis.egg-info/
 .venv
+dataset
+duplicates
