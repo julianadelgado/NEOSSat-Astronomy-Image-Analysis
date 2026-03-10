@@ -8,3 +8,4 @@ results
 neossat_astronomy_image_analysis.egg-info/
 __pycache__
 .venv
+uv.lock
