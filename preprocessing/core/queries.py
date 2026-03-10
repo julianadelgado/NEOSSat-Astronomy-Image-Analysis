@@ -10,7 +10,7 @@ def query_simbad(coord_string, radius):
         ra_deg = float(ra_str)
         dec_deg = float(dec_str)
         coord = SkyCoord(ra=ra_deg*units.deg, dec=dec_deg*units.deg, frame='icrs')
-        result = Simbad.query_region(coord, radius=f'{radius}')
+        result = Simbad.query_region(coord, radius=radius)
 
         if result is None or len(result) == 0:
             return None

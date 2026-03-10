@@ -8,6 +8,16 @@ from photutils.detection import DAOStarFinder
 
 from preprocessing.core.preprocessor import IPreprocessor
 from preprocessing.core.queries import query_simbad
+import astropy.units as units
+from preprocessing.analysis.heatmap import generate_heatmap
+from matplotlib.patches import Circle
+
+# simbad_acceptance_radius = 2 * units.arcmin
+simbad_acceptance_radius = 45 * units.arcsec
+show_acceptance_radius = True  # Debug only - AB 10/03/2026
+
+# Code quite long, will be refactored before pull request, debug/tuning only for now
+# AB 25/02/2026
 
 
 class StarDetection(IPreprocessor):
@@ -35,6 +45,8 @@ class StarDetection(IPreprocessor):
         ra = world.ra.deg
         dec = world.dec.deg
 
+        plot_data = []
+
         # Write CSV
         csv_path = output_dir / "detected_stars.csv"
         with open(csv_path, mode="w", newline="") as f:
@@ -57,7 +69,11 @@ class StarDetection(IPreprocessor):
                 full_coord_string = f"{ra_star} {dec_star}"
 
                 print("[SIMBAD QUERY] ", full_coord_string)
-                identified_obj = query_simbad(full_coord_string, "2m")
+
+                identified_obj = query_simbad(
+                    full_coord_string,
+                    simbad_acceptance_radius
+                )
 
                 if identified_obj is not None:
                     id_star = identified_obj.object_id
@@ -76,6 +92,14 @@ class StarDetection(IPreprocessor):
                     id_star,
                     deviation_star
                 ])
+
+                plot_data.append({
+                    "x": x_star,
+                    "y": y_star,
+                    "flux": flux_star,
+                    "id": id_star,
+                    "deviation": deviation_star if deviation_star != "not_found" else None
+                })
 
         # Annotated image
         # Imports placed here to avoid module-level side-effects
@@ -96,18 +120,127 @@ class StarDetection(IPreprocessor):
             vmax=float(np.percentile(image, 99)),
         )
 
-        for xi, yi in zip(x, y):
-            ax.plot(
-                xi,
-                yi,
-                marker="o",
-                markersize=5,
-                color="red",
-                fillstyle="none",
-            )
+        for star in plot_data:
+            x_star = star["x"]
+            y_star = star["y"]
+            id_star = star["id"]
+
+            if id_star != "not_found":
+
+                ax.plot(
+                    x_star,
+                    y_star,
+                    marker="o",
+                    markersize=8,
+                    color="cyan",
+                    fillstyle="none",
+                    linewidth=1.5
+                )
+
+                ax.text(
+                    x_star + 5,
+                    y_star + 5,
+                    id_star,
+                    color="cyan",
+                    fontsize=6
+                )
+
+            else:
+                ax.plot(
+                    x_star,
+                    y_star,
+                    marker="o",
+                    markersize=8,
+                    color="red",
+                    fillstyle="none",
+                    linewidth=1.2
+                )
+
+            # Acceptance radius visualization, debug only - AB 10/03/2026
+            if show_acceptance_radius:
+                star_coord = wcs.pixel_to_world(x_star, y_star)
+                radius_coord = star_coord.directional_offset_by(0*units.deg, simbad_acceptance_radius)
+                x_radius, y_radius = wcs.world_to_pixel(radius_coord)
+                radius_pix = np.sqrt((x_radius - x_star)**2 + (y_radius - y_star)**2)
+
+                circle = Circle(
+                    (x_star, y_star),
+                    radius_pix,
+                    edgecolor="yellow",
+                    facecolor="none",
+                    linewidth=1,
+                    linestyle="--"
+                )
+                ax.add_patch(circle)
 
         img_path = output_dir / "detected_stars_img.png"
         plt.savefig(img_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
+
+        x_vals = []
+        y_vals = []
+        dev_vals = []
+
+        for star in plot_data:
+            if star["deviation"] is not None:
+                x_vals.append(star["x"])
+                y_vals.append(star["y"])
+                dev_vals.append(star["deviation"])
+
+        generate_heatmap(
+            x_vals,
+            y_vals,
+            dev_vals,
+            image.shape,
+            output_dir / "heatmap_deviation.png",
+            title="Deviation Heatmap"
+        )
+
+        x_vals = []
+        y_vals = []
+        values = []
+
+        for star in plot_data:
+            x_vals.append(star["x"])
+            y_vals.append(star["y"])
+
+            if star["id"] == "not_found":
+                values.append(1)
+            else:
+                values.append(0)
+
+        generate_heatmap(
+            x_vals,
+            y_vals,
+            values,
+            image.shape,
+            output_dir / "heatmap_unidentified.png",
+            title="Unidentified Sources Density"
+        )
+
+        x_vals = [s["x"] for s in plot_data]
+        y_vals = [s["y"] for s in plot_data]
+
+        generate_heatmap(
+            x_vals,
+            y_vals,
+            np.ones(len(x_vals)),
+            image.shape,
+            output_dir / "heatmap_source_density.png",
+            title="Detected Sources Density"
+        )
+
+        x_vals = [s["x"] for s in plot_data]
+        y_vals = [s["y"] for s in plot_data]
+        flux_vals = [s["flux"] for s in plot_data]
+
+        generate_heatmap(
+            x_vals,
+            y_vals,
+            flux_vals,
+            image.shape,
+            output_dir / "heatmap_flux.png",
+            title="Flux Heatmap"
+        )
 
         return {"stars_detected": len(x)}
