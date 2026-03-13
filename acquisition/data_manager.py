@@ -61,10 +61,15 @@ class DataManager:
             return
         try:
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            
+            data = self.fits_image[0].data.astype(np.float32)
 
-            data = self.fits_image[0].data
-            data = (data - np.min(data)) / (np.max(data) - np.min(data)) * 255
-            image = Image.fromarray(data.astype(np.uint8))
+            vmin = np.percentile(data, 15) 
+            vmax = np.percentile(data, 99.5)
+
+            data_scaled = np.clip((data - vmin) / (vmax - vmin) * 255, 0, 255)
+            
+            image = Image.fromarray(data_scaled.astype(np.uint8))
             image.save(output_path)
 
             print(f"FITS image converted to PNG and saved at: {output_path}")

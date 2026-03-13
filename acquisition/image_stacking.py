@@ -30,7 +30,7 @@ class ImageStacking:
                     if img_date != self.date_obs:
                         continue
 
-                    current_data = img_fits[0].data.astype(np.float64)
+                    current_data = img_fits[0].data.astype(np.float32)
                     time_obs = (
                         header.get("TIME-OBS", "00-00-00")
                         .split(".")[0]
@@ -64,7 +64,8 @@ class ImageStacking:
 
             stacked_data = np.nanmax(data_arrays, axis=0)
 
-            vmin, vmax = np.percentile(stacked_data, [1, 99.9])
+            vmin = np.percentile(stacked_data, 40) 
+            vmax = np.percentile(stacked_data, 99.9)
             stacked_scaled = np.clip(
                 (stacked_data - vmin) / (vmax - vmin) * 255, 0, 255
             )
