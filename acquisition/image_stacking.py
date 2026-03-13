@@ -64,7 +64,7 @@ class ImageStacking:
 
             stacked_data = np.nanmax(data_arrays, axis=0)
 
-            vmin = np.percentile(stacked_data, 40) 
+            vmin = np.percentile(stacked_data, 40)
             vmax = np.percentile(stacked_data, 99.9)
             stacked_scaled = np.clip(
                 (stacked_data - vmin) / (vmax - vmin) * 255, 0, 255

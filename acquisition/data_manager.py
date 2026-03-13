@@ -61,14 +61,14 @@ class DataManager:
             return
         try:
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            
+
             data = self.fits_image[0].data.astype(np.float32)
 
-            vmin = np.percentile(data, 15) 
+            vmin = np.percentile(data, 15)
             vmax = np.percentile(data, 99.5)
 
             data_scaled = np.clip((data - vmin) / (vmax - vmin) * 255, 0, 255)
-            
+
             image = Image.fromarray(data_scaled.astype(np.uint8))
             image.save(output_path)
 
