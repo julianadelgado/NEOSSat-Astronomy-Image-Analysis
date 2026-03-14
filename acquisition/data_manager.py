@@ -70,9 +70,7 @@ class DataManager:
             vmin = np.percentile(data, PERCENTILE_LOWER_BOUND)
             vmax = np.percentile(data, PERCENTILE_UPPER_BOUND)
             if vmax <= vmin:
-                print(
-                    "Warning: vmax is less than or equal to vmin, skipping FITS to PNG conversion."
-                )
+                print("Skipping conversion due to invalid percentile bounds.")
                 return
 
             data_scaled = np.clip((data - vmin) / (vmax - vmin) * 255, 0, 255)
