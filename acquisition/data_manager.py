@@ -57,6 +57,9 @@ class DataManager:
             return {}
 
     def fits_to_png(self, output_path):
+        PERCENTILE_LOWER_BOUND = 15
+        PERCENTILE_UPPER_BOUND = 99.5
+
         if self.fits_image is None:
             return
         try:
@@ -64,8 +67,13 @@ class DataManager:
 
             data = self.fits_image[0].data.astype(np.float32)
 
-            vmin = np.percentile(data, 15)
-            vmax = np.percentile(data, 99.5)
+            vmin = np.percentile(data, PERCENTILE_LOWER_BOUND)
+            vmax = np.percentile(data, PERCENTILE_UPPER_BOUND)
+            if vmax <= vmin:
+                print(
+                    "Warning: vmax is less than or equal to vmin, skipping FITS to PNG conversion."
+                )
+                return
 
             data_scaled = np.clip((data - vmin) / (vmax - vmin) * 255, 0, 255)
 

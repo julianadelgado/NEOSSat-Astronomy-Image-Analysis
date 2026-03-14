@@ -13,6 +13,8 @@ class ImageStacking:
         self.date_obs = date_obs
 
     def stack_images(self):
+        PERCENTILE_LOWER_BOUND = 40
+        PERCENTILE_UPPER_BOUND = 99.9
         all_images = [f for f in os.listdir(self.images_path) if f.endswith(".fits")]
         output_dir = os.path.join(self.images_path, "stacked")
         os.makedirs(output_dir, exist_ok=True)
@@ -64,8 +66,11 @@ class ImageStacking:
 
             stacked_data = np.nanmax(data_arrays, axis=0)
 
-            vmin = np.percentile(stacked_data, 40)
-            vmax = np.percentile(stacked_data, 99.9)
+            vmin = np.percentile(stacked_data, PERCENTILE_LOWER_BOUND)
+            vmax = np.percentile(stacked_data, PERCENTILE_UPPER_BOUND)
+            if vmax <= vmin:
+                print("Warning: vmax is less than or equal to vmin, skipping image stacking.")
+                return
             stacked_scaled = np.clip(
                 (stacked_data - vmin) / (vmax - vmin) * 255, 0, 255
             )
