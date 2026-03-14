@@ -69,7 +69,9 @@ class ImageStacking:
             vmin = np.percentile(stacked_data, PERCENTILE_LOWER_BOUND)
             vmax = np.percentile(stacked_data, PERCENTILE_UPPER_BOUND)
             if vmax <= vmin:
-                print("Warning: vmax is less than or equal to vmin, skipping image stacking.")
+                print(
+                    "Warning: vmax is less than or equal to vmin, skipping image stacking."
+                )
                 return
             stacked_scaled = np.clip(
                 (stacked_data - vmin) / (vmax - vmin) * 255, 0, 255
