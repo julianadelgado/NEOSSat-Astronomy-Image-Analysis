@@ -18,6 +18,7 @@ dependencies = [
     "requests>=2.32.4",
     "scipy>=1.10.1",
     "seaborn>=0.13.2",
+    "skyfield>=1.48",
     "torch==1.13.1",
     "torchvision==0.14.1",
     "tqdm>=4.67.3",
