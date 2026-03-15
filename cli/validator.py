@@ -8,8 +8,7 @@ def validate_data_directory(value: str) -> str:
         raise typer.BadParameter(f"'{value}' is not a valid directory.")
     return value
 
-
 def validate_email(value: str) -> str:
-    if value and ("@" not in value or "." not in value):
+    if value and ("@" not in value or value.index("@") > value.rindex(".")):
         raise typer.BadParameter(f"'{value}' is not a valid email address.")
     return value

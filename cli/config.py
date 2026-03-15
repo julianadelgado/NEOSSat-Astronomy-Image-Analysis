@@ -7,9 +7,9 @@ import yaml
 @dataclass
 class Config:
     email: str = ""
-    data_dir: str = ""
-    output_dir: str = "./output"
-
+    data_dir: str = "./data"
+    results_dir: str = "./results"
+    reports_dir: str = "./reports"
 
 def load_config(path: str | None) -> Config:
     if path is None:

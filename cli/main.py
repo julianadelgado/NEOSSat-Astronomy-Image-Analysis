@@ -37,6 +37,18 @@ def main(
         False, "--image-stacking", "-i", help="Run image stacking"
     ),
     streaks: bool = typer.Option(False, "--streaks", "-k", help="Run streak detection"),
+    results_dir: str = typer.Option(
+        None,
+        "--results-dir",
+        "-r",
+        help="Path to directory to save results (default: ./results)",
+    ),
+    reports_dir: str = typer.Option(
+        None,
+        "--reports-dir",
+        "-R",
+        help="Path to directory to save reports (default: ./reports)",
+    ),
 ):
     print("Welcome to the NEOSSat Astronomy Image Analysis!")
     cfg = load_config(None)
@@ -53,6 +65,10 @@ def main(
         cfg.email = typer.prompt(
             "Enter a valid email address to receive results", default=cfg.email
         )
+    if results_dir:
+        cfg.results_dir = results_dir
+    if reports_dir:
+        cfg.reports_dir = reports_dir
 
     # If neither flag is set, run everything
     run_all = not (stars or image_stacking or streaks)
@@ -82,9 +98,10 @@ def main(
 
                     downloader = FitsHandler(sky_coord, date_obs)
                     downloader.download_images_to_directory(clean_name)
-                    preprocessor = ImageStacking(clean_name, data_manager, date_obs)
+                    preprocessor = ImageStacking(clean_name, data_manager, date_obs, cfg.results_dir)
                     preprocessor.stack_images()
                 data_manager.fits_image.close()
+                
     if run_stars:
         print("Running star detection...")
         # TODO verify star detection call
