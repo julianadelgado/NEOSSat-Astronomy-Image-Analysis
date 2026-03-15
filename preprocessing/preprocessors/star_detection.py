@@ -29,9 +29,19 @@ class StarDetection(IPreprocessor):
 
         x = sources["xcentroid"]
         y = sources["ycentroid"]
-        world = wcs.pixel_to_world(x, y)
-        ra = world.ra.deg
-        dec = world.dec.deg
+        ctypes = [wcs.wcs.ctype[i].upper() for i in range(wcs.naxis)]
+        ra_idx = next((i for i, c in enumerate(ctypes) if "RA" in c), None)
+        dec_idx = next((i for i, c in enumerate(ctypes) if "DEC" in c), None)
+        if ra_idx is not None and dec_idx is not None:
+            pixel_in = np.zeros((len(x), wcs.naxis))
+            pixel_in[:, 0] = x
+            pixel_in[:, 1] = y
+            world_out = wcs.all_pix2world(pixel_in, 0)
+            ra = world_out[:, ra_idx]
+            dec = world_out[:, dec_idx]
+        else:
+            ra = np.full(len(x), np.nan)
+            dec = np.full(len(x), np.nan)
 
         # Write CSV
         csv_path = output_dir / "detected_stars.csv"
