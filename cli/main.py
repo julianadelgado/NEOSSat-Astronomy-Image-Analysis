@@ -1,5 +1,6 @@
 import os
 import shutil
+
 from acquisition.data_manager import DataManager
 from acquisition.directory_manager import DataDirectoryManager
 from acquisition.fits_handler import FitsHandler
