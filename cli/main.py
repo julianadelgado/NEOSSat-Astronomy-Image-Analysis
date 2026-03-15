@@ -98,10 +98,12 @@ def main(
 
                     downloader = FitsHandler(sky_coord, date_obs)
                     downloader.download_images_to_directory(clean_name)
-                    preprocessor = ImageStacking(clean_name, data_manager, date_obs, cfg.results_dir)
+                    preprocessor = ImageStacking(
+                        clean_name, data_manager, date_obs, cfg.results_dir
+                    )
                     preprocessor.stack_images()
                 data_manager.fits_image.close()
-                
+
     if run_stars:
         print("Running star detection...")
         # TODO verify star detection call

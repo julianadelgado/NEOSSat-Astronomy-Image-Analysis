@@ -11,6 +11,7 @@ class Config:
     results_dir: str = "./results"
     reports_dir: str = "./reports"
 
+
 def load_config(path: str | None) -> Config:
     if path is None:
         default = Path("config.yaml")
