@@ -42,4 +42,4 @@ test:
 check:
 	uv run black . 
 	uv run isort .
-	uv run flake8 . --exclude=.venv,__pycache__,.git,dl_streak_detect
+	uv run flake8 . --exclude=.venv,__pycache__,.git,dl_streak_detect,detectors

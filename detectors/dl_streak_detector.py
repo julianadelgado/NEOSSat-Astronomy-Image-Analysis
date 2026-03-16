@@ -8,22 +8,18 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
 sys.path.append(str(Path(__file__).parent.parent / "dl_streak_detect"))
+from cli.config import load_config
 from dl_streak_detect.detect import detect
 from preprocessing.preprocessors.fits_to_png import FitsToPng
 
 from .core.IDetector import IDetector
 
-config_path = Path(__file__).parent.parent / "config.yaml"
-if config_path.exists():
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-else:
-    config = {}
+config = load_config()
 
-DATA_DIR = Path(config.get("data_dir", "data"))
-INFERENCE_DATA_DIR = Path("inference_data")
-RESULT_DATA_DIR = Path(config.get("results_dir", "result_data"))
-REPORTS_DIR = Path(config.get("reports_dir", "reports"))
+DATA_DIR = config.data_dir
+INFERENCE_DATA_DIR = Path("inference_data")  # unique folder for this detector
+RESULT_DATA_DIR = config.results_dir
+REPORTS_DIR = config.reports_dir
 
 
 class SatelliteDatabaseService:
