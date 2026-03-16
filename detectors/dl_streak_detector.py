@@ -11,9 +11,9 @@ sys.path.append(str(Path(__file__).parent.parent / "dl_streak_detect"))
 from cli.config import load_config
 from dl_streak_detect.detect import detect
 from preprocessing.preprocessors.fits_to_png import FitsToPng
+from services.satellite_db import SatelliteDatabaseService
 
 from .core.IDetector import IDetector
-from services.satellite_db import SatelliteDatabaseService
 
 config = load_config(None)
 

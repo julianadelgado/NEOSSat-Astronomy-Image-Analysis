@@ -1,6 +1,7 @@
 import datetime
 from typing import Any, Dict, List, Optional
 
+
 class SatelliteDatabaseService:
     """
     Service for querying a satellite database using Skyfield and Celestrak.
