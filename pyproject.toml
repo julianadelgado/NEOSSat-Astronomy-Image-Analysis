@@ -13,24 +13,51 @@ requires-python = ">=3.10"
 
 dependencies = [
     "astropy==6.0.1",
-    "numpy==1.26.4",
+    "numpy>=1.18.5,<1.24.0",
 ]
 
 [project.optional-dependencies]
-cli = [ "astroquery", "typer", "pyyaml", "astroalign", "pillow", "matplotlib==3.8.4", "photutils==1.12.0" ]
+cli = [
+    "astroquery>=0.4.11",
+    "typer>=0.24.1",
+    "pyyaml>=5.3.1",
+    "astroalign>=2.6.2",
+    "pillow>=7.1.2",
+    "matplotlib>=3.2.2",
+    "photutils>=1.12.0",
+    "opencv-python>=4.1.1",
+    "torch==1.13.1",
+    "torchvision==0.14.1",
+    "skyfield",
+    "pandas",
+    "scipy>=1.4.1",
+    "seaborn",
+    "tqdm>=4.41.0",
+    "requests>=2.23.0",
+    "protobuf<4.21.3"
+]
 api = [
-    "matplotlib==3.8.4",
-    "photutils==1.12.0",
+    "matplotlib>=3.2.2",
+    "photutils>=1.12.0",
     "fastapi==0.110.0",
     "uvicorn[standard]==0.29.0",
     "pydantic==2.6.4",
-    "scipy>=1.11"
+    "scipy>=1.4.1",
+    "opencv-python>=4.1.1",
+    "torch==1.13.1",
+    "torchvision==0.14.1",
+    "skyfield",
+    "pandas",
+    "seaborn",
+    "tqdm>=4.41.0",
+    "requests>=2.23.0",
+    "protobuf<4.21.3"
 ]
 gui = [
-    "PyQt6",
-    "astroquery",
-    "requests",
-    "matplotlib==3.8.4",
+    "pyqt6>=6.10.2",
+    "astroquery>=0.4.11",
+    "requests>=2.23.0",
+    "matplotlib>=3.2.2",
 ]
 dev = [ "black", "isort", "flake8", "pytest", "httpx>=0.23.0,<0.28.0" ]
 

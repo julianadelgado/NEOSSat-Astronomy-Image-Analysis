@@ -1,4 +1,4 @@
 email: user@example.com
-data_dir: ./data
+data_dir: ./__streaks
 results_dir: ./results
 reports_dir: ./reports
