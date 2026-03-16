@@ -101,7 +101,7 @@ class SatelliteDatabaseService:
                             "notes": "Matched via Skyfield and Celestrak TLEs (Geocentric)",
                         }
                     )
-            except Exception as _:
+            except Exception:
                 # In case propagation fails for an old TLE
                 continue
 
