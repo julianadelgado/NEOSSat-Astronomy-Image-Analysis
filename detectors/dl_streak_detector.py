@@ -14,7 +14,7 @@ from preprocessing.preprocessors.fits_to_png import FitsToPng
 
 from .core.IDetector import IDetector
 
-config = load_config()
+config = load_config(None)
 
 DATA_DIR = config.data_dir
 INFERENCE_DATA_DIR = Path("inference_data")  # unique folder for this detector
