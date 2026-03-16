@@ -7,7 +7,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 
-
 sys.path.append(str(Path(__file__).parent.parent / "dl_streak_detect"))
 from dl_streak_detect.detect import detect
 from preprocessing.preprocessors.fits_to_png import FitsToPng
@@ -25,6 +24,7 @@ DATA_DIR = Path(config.get("data_dir", "data"))
 INFERENCE_DATA_DIR = Path("inference_data")
 RESULT_DATA_DIR = Path(config.get("results_dir", "result_data"))
 REPORTS_DIR = Path(config.get("reports_dir", "reports"))
+
 
 class SatelliteDatabaseService:
     """
@@ -402,14 +402,18 @@ class DLStreakDetector(IDetector):
 
         return enhanced
 
-    def _generate_markdown_report(self, results_summary: List[Dict[str, Any]], result_dir: Path) -> None:
+    def _generate_markdown_report(
+        self, results_summary: List[Dict[str, Any]], result_dir: Path
+    ) -> None:
         has_content = any(len(res.get("detections", [])) > 0 for res in results_summary)
         if not has_content:
             return
 
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        report_path = REPORTS_DIR / f"streak_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        
+        report_path = (
+            REPORTS_DIR / f"streak_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+        )
+
         lines = ["# Streak Detection Report\n"]
         lines.append(f"Generated at: {datetime.now().isoformat()}\n")
 
@@ -428,27 +432,33 @@ class DLStreakDetector(IDetector):
                 if candidate.exists():
                     img_path = candidate
                     break
-            
+
             if img_path:
                 lines.append(f"![{stem}]({img_path.absolute().as_posix()})\n")
-            
+
             for i, det in enumerate(dets):
                 lines.append(f"### Detection {i+1}")
                 lines.append(f"- Confidence: {det.get('confidence', 0):.2f}")
                 if "world_coords" in det:
                     wc = det["world_coords"]
-                    lines.append(f"- RA: {wc.get('ra_hms', wc.get('ra_deg'))} (Deg: {wc.get('ra_deg')})")
-                    lines.append(f"- Dec: {wc.get('dec_dms', wc.get('dec_deg'))} (Deg: {wc.get('dec_deg')})")
-                
+                    lines.append(
+                        f"- RA: {wc.get('ra_hms', wc.get('ra_deg'))} (Deg: {wc.get('ra_deg')})"
+                    )
+                    lines.append(
+                        f"- Dec: {wc.get('dec_dms', wc.get('dec_deg'))} (Deg: {wc.get('dec_deg')})"
+                    )
+
                 if "satellite_correlation" in det:
                     sat = det["satellite_correlation"]
                     lines.append(f"#### Correlated Satellite")
                     lines.append(f"- Name: {sat.get('name')}")
                     lines.append(f"- Catalog ID: {sat.get('catalog_id')}")
-                    lines.append(f"- Separation: {sat.get('separation_arcmin', 0):.2f} arcmin")
+                    lines.append(
+                        f"- Separation: {sat.get('separation_arcmin', 0):.2f} arcmin"
+                    )
                     lines.append(f"- Confidence: {sat.get('confidence', 0):.2f}")
                 lines.append("")
-            
+
             lines.append("\n---\n")
 
         with open(report_path, "w", encoding="utf-8") as f:
@@ -599,7 +609,7 @@ class DLStreakDetector(IDetector):
         finally:
             if INFERENCE_DATA_DIR.exists():
                 shutil.rmtree(INFERENCE_DATA_DIR, ignore_errors=True)
-            
+
             # Clean up skyfield downloaded TLE files
             gp_php_path = Path("gp.php")
             if gp_php_path.exists():
