@@ -8,13 +8,14 @@ from preprocessing.metrics import Metrics
 from preprocessing.pipeline import Pipeline
 from preprocessing.preprocessors.fits_to_png import FitsToPng
 from preprocessing.preprocessors.star_detection import StarDetection
+from preprocessing.preprocessors.star_detection_legacy import StarDetectionLegacy
 
 app = FastAPI()
 
 metrics = Metrics()
 
 pipeline = Pipeline(
-    preprocessors=[StarDetection(), FitsToPng()],
+    preprocessors=[StarDetection(), StarDetectionLegacy(), FitsToPng()],
     metrics=metrics,
 )
 
