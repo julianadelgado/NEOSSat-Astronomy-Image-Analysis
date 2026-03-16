@@ -149,9 +149,12 @@ def find_and_remove_duplicates(
         for h, existing_path in hashes.items():
             dist = hamming_distance(img_hash, h)
             if dist <= threshold:
-                # If multiple existing images are similar, picking the one with smallest dist is reasonable,
-                # but "first match" logic is simpler and sufficient for duplicate removal.
-                # However, iterating all to find best match might prevent false positives near threshold?
+                # If multiple existing images are similar,
+                # picking the one with smallest dist is reasonable,
+                # but "first match" logic is simpler and
+                # sufficient for duplicate removal.
+                # However, iterating all to find best match
+                # might prevent false positives near threshold?
                 if dist < min_dist:
                     min_dist = dist
                     original_file = existing_path
@@ -159,9 +162,8 @@ def find_and_remove_duplicates(
 
         if is_duplicate:
             duplicates_found += 1
-            print(
-                f"Duplicate found: {file_path.name} is similar to {original_file.name} (Distance: {min_dist})"
-            )
+            print(f"Duplicate found: {file_path.name} \
+                is similar to {original_file.name} (Distance: {min_dist})")
 
             # Handle duplicate
             if action == "delete":
@@ -208,7 +210,8 @@ if __name__ == "__main__":
         "--threshold",
         type=int,
         default=5,
-        help="Hamm. dist. thresh for similarity (0-64, lower means more strict). Default 5.",
+        help="Hamm. dist. thresh for similarity \
+            (0-64, lower means more strict). Default 5.",
     )
     parser.add_argument(
         "--action",

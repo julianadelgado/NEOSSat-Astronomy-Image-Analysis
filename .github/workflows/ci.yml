@@ -47,7 +47,7 @@ jobs:
           uv run isort --check-only .
 
       - name: Lint
-        run: uv run flake8 --exclude=.venv,__pycache__,.git,dl_streak_detect
+        run: uv run flake8 --exclude=.venv,__pycache__,.git,dl_streak_detect,detectors
 
       - name: Run unit tests
         run: uv run pytest -v
