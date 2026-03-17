@@ -16,8 +16,11 @@ from preprocessing.core.queries import query_simbad
 simbad_acceptance_radius = 45 * units.arcsec
 show_acceptance_radius = True  # Debug only - AB 10/03/2026
 
-# Code quite long, will be refactored before pull request, debug/tuning only for now
-# AB 25/02/2026
+# This code is a legacy implementation of star detection with star-to-catalog matching,
+# retained for reference, testing and comparison purposes. It is not actively maintained
+# and contain lower performance algorithms and less features.
+# It will be removed when region-based detection is fully validated.
+# AB 16/03/2026
 
 
 class StarDetectionLegacy(IPreprocessor):
