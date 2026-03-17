@@ -1,16 +1,16 @@
 import csv
 from pathlib import Path
 
+import astropy.units as units
 import numpy as np
 from astropy.stats import sigma_clipped_stats
 from astropy.wcs import WCS
+from matplotlib.patches import Circle
 from photutils.detection import DAOStarFinder
 
+from preprocessing.analysis.heatmap import generate_heatmap
 from preprocessing.core.preprocessor import IPreprocessor
 from preprocessing.core.queries import query_simbad
-import astropy.units as units
-from preprocessing.analysis.heatmap import generate_heatmap
-from matplotlib.patches import Circle
 
 # simbad_acceptance_radius = 2 * units.arcmin
 simbad_acceptance_radius = 45 * units.arcsec

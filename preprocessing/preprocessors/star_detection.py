@@ -2,6 +2,7 @@ import csv
 from pathlib import Path
 
 import astropy.units as units
+import matplotlib
 import numpy as np
 from astropy.coordinates import SkyCoord
 from astropy.stats import sigma_clipped_stats
@@ -9,14 +10,14 @@ from astropy.wcs import WCS
 from photutils.detection import DAOStarFinder
 
 from preprocessing.analysis.heatmap import generate_heatmap
+from preprocessing.core.map_groups import map_to_group
 from preprocessing.core.preprocessor import IPreprocessor
 from preprocessing.core.queries import query_simbad_skycoord
-from preprocessing.core.map_groups import map_to_group
 
-import matplotlib
 matplotlib.use("Agg")
 
 from matplotlib import pyplot as plt  # noqa: E402
+
 # flake8 doesn't like the non-top-level import but we need
 # to set the backend before importing pyplot - AB 16/03/2026
 
@@ -58,17 +59,10 @@ class StarDetection(IPreprocessor):
         output_dir.mkdir(parents=True, exist_ok=True)
         csv_path = output_dir / "simbad_request_results.csv"
 
-        region_catalog = query_simbad_skycoord(
-            center,
-            radius,
-            output_csv_path=csv_path
-        )
+        region_catalog = query_simbad_skycoord(center, radius, output_csv_path=csv_path)
 
         self._render_region_catalog_map(
-            image=image,
-            wcs=wcs,
-            region_catalog=region_catalog,
-            output_dir=output_dir
+            image=image, wcs=wcs, region_catalog=region_catalog, output_dir=output_dir
         )
 
         detected_candidates = self._detect_sources(image, wcs)
@@ -97,7 +91,7 @@ class StarDetection(IPreprocessor):
     """===> Private Functions <==="""
 
     def _get_image_region(self, image: np.ndarray, wcs: WCS):
-        """Calculate the center and radius of the image region in celestial coordinates."""
+        """Calculate the center and radius of the image region"""
 
         height, width = image.shape
         x_corners = [0, width, 0, width]
@@ -105,12 +99,11 @@ class StarDetection(IPreprocessor):
 
         corner_coords = wcs.pixel_to_world(x_corners, y_corners)
 
-        center = SkyCoord(
-            ra=np.mean(corner_coords.ra),
-            dec=np.mean(corner_coords.dec)
-        )
+        center = SkyCoord(ra=np.mean(corner_coords.ra), dec=np.mean(corner_coords.dec))
 
-        print(f"Image region center: RA={center.ra.deg:.4f} deg, Dec={center.dec.deg:.4f} deg")
+        center_coord_str = f"RA={center.ra.deg:.4f} deg, Dec={center.dec.deg:.4f} deg"
+
+        print(f"Image region center: {center_coord_str}")
 
         separations = center.separation(corner_coords)
         radius = separations.max()
@@ -126,8 +119,7 @@ class StarDetection(IPreprocessor):
         mean, median, std = sigma_clipped_stats(image, sigma=SIGMA)
 
         daofind = DAOStarFinder(
-            fwhm=DAO_FINDER_FWHM,
-            threshold=DAO_FINDER_THRESHOLD * std
+            fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std
         )
 
         sources = daofind(image - median)
@@ -137,9 +129,9 @@ class StarDetection(IPreprocessor):
         if sources is None or len(sources) == 0:
             return []
 
-        x_coord = sources['xcentroid']
-        y_coord = sources['ycentroid']
-        flux = sources['flux']
+        x_coord = sources["xcentroid"]
+        y_coord = sources["ycentroid"]
+        flux = sources["flux"]
 
         world_coords = wcs.pixel_to_world(x_coord, y_coord)
 
@@ -147,14 +139,18 @@ class StarDetection(IPreprocessor):
 
         for i in range(len(sources)):
 
-            detected_candidates.append({
-                "x": float(x_coord[i]),
-                "y": float(y_coord[i]),
-                "coord": world_coords[i],
-                "flux": float(flux[i])
-            })
+            detected_candidates.append(
+                {
+                    "x": float(x_coord[i]),
+                    "y": float(y_coord[i]),
+                    "coord": world_coords[i],
+                    "flux": float(flux[i]),
+                }
+            )
 
-        print(f"Detected {len(detected_candidates)} star candidates after DAOStarFinder.")
+        print(
+            f"Detected {len(detected_candidates)} star candidates after DAOStarFinder."
+        )
 
         return detected_candidates
 
@@ -168,12 +164,14 @@ class StarDetection(IPreprocessor):
         if len(region_catalog) == 0:
             matched = []
             for src in detected_candidates:
-                matched.append({
-                    **src,
-                    "object_id": CANDIDATE_NOT_FOUND_STRING,
-                    "otype": "Default",
-                    "deviation_arcsec": None
-                })
+                matched.append(
+                    {
+                        **src,
+                        "object_id": CANDIDATE_NOT_FOUND_STRING,
+                        "otype": "Default",
+                        "deviation_arcsec": None,
+                    }
+                )
             return matched
 
         detected_coords = SkyCoord([src["coord"] for src in detected_candidates])
@@ -186,19 +184,23 @@ class StarDetection(IPreprocessor):
         for i, src in enumerate(detected_candidates):
             separation = sep2d[i]
             if separation < MATCH_THRESHOLD:
-                matched_candidates.append({
-                    **src,
-                    "object_id": region_catalog[idx[i]].object_id,
-                    "otype": getattr(region_catalog[idx[i]], "otype", "Default"),
-                    "deviation_arcsec": separation.arcsec
-                })
+                matched_candidates.append(
+                    {
+                        **src,
+                        "object_id": region_catalog[idx[i]].object_id,
+                        "otype": getattr(region_catalog[idx[i]], "otype", "Default"),
+                        "deviation_arcsec": separation.arcsec,
+                    }
+                )
             else:
-                matched_candidates.append({
-                    **src,
-                    "object_id": CANDIDATE_NOT_FOUND_STRING,
-                    "otype": "Default",
-                    "deviation_arcsec": separation.arcsec
-                })
+                matched_candidates.append(
+                    {
+                        **src,
+                        "object_id": CANDIDATE_NOT_FOUND_STRING,
+                        "otype": "Default",
+                        "deviation_arcsec": separation.arcsec,
+                    }
+                )
 
         identified_candidates = [
             c
@@ -217,20 +219,22 @@ class StarDetection(IPreprocessor):
         output_dir.mkdir(parents=True, exist_ok=True)
         csv_path = output_dir / "star_detection_results.csv"
 
-        with open(csv_path, mode='w', newline="") as file:
+        with open(csv_path, mode="w", newline="") as file:
 
             writer = csv.writer(file)
 
-            writer.writerow([
-                "id",
-                "x_pixel",
-                "y_pixel",
-                "ra_deg",
-                "dec_deg",
-                "flux",
-                "object_id",
-                "deviation_arcsec"
-            ])
+            writer.writerow(
+                [
+                    "id",
+                    "x_pixel",
+                    "y_pixel",
+                    "ra_deg",
+                    "dec_deg",
+                    "flux",
+                    "object_id",
+                    "deviation_arcsec",
+                ]
+            )
 
             for i, candidate in enumerate(matched_candidates):
 
@@ -239,26 +243,28 @@ class StarDetection(IPreprocessor):
                 deviation = candidate.get("deviation_arcsec")
                 object_id = candidate.get("object_id", CANDIDATE_NOT_FOUND_STRING)
 
-                writer.writerow([
-                    i,
-                    candidate["x"],
-                    candidate["y"],
-                    ra_deg,
-                    dec_deg,
-                    candidate["flux"],
-                    object_id,
-                    deviation if deviation is not None else CANDIDATE_NOT_FOUND_STRING
-                ])
+                writer.writerow(
+                    [
+                        i,
+                        candidate["x"],
+                        candidate["y"],
+                        ra_deg,
+                        dec_deg,
+                        candidate["flux"],
+                        object_id,
+                        (
+                            deviation
+                            if deviation is not None
+                            else CANDIDATE_NOT_FOUND_STRING
+                        ),
+                    ]
+                )
 
         print(f"Star detection results exported to {csv_path}")
 
     def _render_region_image(
-            self,
-            image,
-            wcs,
-            detected_candidates,
-            matched_candidates,
-            output_dir: Path):
+        self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
+    ):
 
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / "detected_stars_img.png"
@@ -268,10 +274,10 @@ class StarDetection(IPreprocessor):
 
         ax.imshow(
             image,
-            origin='lower',
-            cmap='gray',
+            origin="lower",
+            cmap="gray",
             vmin=np.percentile(image, VMIN_PERCENTILE),
-            vmax=np.percentile(image, VMAX_PERCENTILE)
+            vmax=np.percentile(image, VMAX_PERCENTILE),
         )
 
         for star in matched_candidates:
@@ -283,43 +289,39 @@ class StarDetection(IPreprocessor):
                 ax.plot(
                     x_star,
                     y_star,
-                    marker='o',
+                    marker="o",
                     markersize=8,
-                    markeredgecolor='cyan',
-                    markerfacecolor='none',
+                    markeredgecolor="cyan",
+                    markerfacecolor="none",
                     label=object_id,
-                    linewidth=1.5
+                    linewidth=1.5,
                 )
             else:
                 ax.plot(
                     x_star,
                     y_star,
-                    marker='o',
+                    marker="o",
                     markersize=8,
-                    markeredgecolor='red',
-                    markerfacecolor='none',
-                    linewidth=1.5
+                    markeredgecolor="red",
+                    markerfacecolor="none",
+                    linewidth=1.5,
                 )
 
-        plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        plt.savefig(output_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
 
         print(f"Region image with detected stars saved to {output_path}")
 
     def _render_region_map(
-            self,
-            image,
-            wcs,
-            detected_candidates,
-            matched_candidates,
-            output_dir: Path):
+        self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
+    ):
         output_dir.mkdir(parents=True, exist_ok=True)
         map_path = output_dir / "detected_stars_map.png"
 
         fig, ax = plt.subplots(figsize=FIGSIZE)
-        fig.patch.set_facecolor('black')
-        ax.set_facecolor('black')
-        ax.axis('off')
+        fig.patch.set_facecolor("black")
+        ax.set_facecolor("black")
+        ax.axis("off")
         ax.set_xlim(0, image.shape[1])
         ax.set_ylim(0, image.shape[0])
 
@@ -345,21 +347,17 @@ class StarDetection(IPreprocessor):
                 markersize=8,
                 label=object_id if object_id != CANDIDATE_NOT_FOUND_STRING else None,
                 fillstyle="none",
-                linewidth=1.5
+                linewidth=1.5,
             )
 
-        plt.savefig(map_path, dpi=300, bbox_inches='tight', pad_inches=0)
+        plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
         print(f"Region map with detected stars saved to {map_path}")
 
     def _render_heatmaps(
-            self,
-            image,
-            wcs,
-            detected_candidates,
-            matched_candidates, 
-            output_dir: Path):
+        self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
+    ):
         """Generate heatmaps for detected candidates."""
 
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -380,11 +378,11 @@ class StarDetection(IPreprocessor):
             image.shape,
             heatmap_path,
             bins=50,
-            title="Detected Stars Heatmap"
+            title="Detected Stars Heatmap",
         )
 
         print(f"Heatmap of detected stars saved to {heatmap_path}")
-    
+
     def _render_region_catalog_map(self, image, wcs, region_catalog, output_dir: Path):
         """Generate a map showing all objects in the SIMBAD region catalog."""
 
@@ -396,9 +394,9 @@ class StarDetection(IPreprocessor):
         map_path = output_dir / "region_catalog_map.png"
 
         fig, ax = plt.subplots(figsize=FIGSIZE)
-        fig.patch.set_facecolor('black')
-        ax.set_facecolor('black')
-        ax.axis('off')
+        fig.patch.set_facecolor("black")
+        ax.set_facecolor("black")
+        ax.axis("off")
         ax.set_xlim(0, image.shape[1])
         ax.set_ylim(0, image.shape[0])
 
@@ -416,10 +414,10 @@ class StarDetection(IPreprocessor):
                 markersize=8,
                 label=obj.object_id,
                 fillstyle="none",
-                linewidth=1.5
+                linewidth=1.5,
             )
 
-        plt.savefig(map_path, dpi=300, bbox_inches='tight', pad_inches=0)
+        plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
 
         print(f"Region catalog map saved to {map_path}")

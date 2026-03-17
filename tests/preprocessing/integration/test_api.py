@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-import numpy as np
 
 
 def test_health_endpoint():
@@ -28,8 +27,9 @@ def test_catalog_endpoint():
 
 
 def test_run_preprocessing_endpoint(tmp_path):
-    from api import main
     from fastapi.testclient import TestClient
+
+    from api import main
 
     client = TestClient(main.app)
 
@@ -41,10 +41,7 @@ def test_run_preprocessing_endpoint(tmp_path):
     with patch(pipeline_path) as mock_pipeline:
         mock_pipeline.run.return_value = {"star_detection": {"stars_detected": 5}}
 
-        payload = {
-            "fits_file": str(fits_file),
-            "preprocessors": ["star_detection"]
-        }
+        payload = {"fits_file": str(fits_file), "preprocessors": ["star_detection"]}
         response = client.post("/preprocessing", json=payload)
 
     assert response.status_code == 200

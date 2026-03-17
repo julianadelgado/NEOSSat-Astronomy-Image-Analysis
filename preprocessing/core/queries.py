@@ -1,9 +1,11 @@
-from astroquery.simbad import Simbad
-from astropy.coordinates import SkyCoord
-import astropy.units as units
 import csv
-import preprocessing.core.identifiedObject as identifiedObject
 from pathlib import Path
+
+import astropy.units as units
+from astropy.coordinates import SkyCoord
+from astroquery.simbad import Simbad
+
+import preprocessing.core.identifiedObject as identifiedObject
 
 
 def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
@@ -33,15 +35,25 @@ def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
             ra_deg=best_match["ra"],
             dec_deg=best_match["dec"],
             distance_arcsec=distance,
-            otype=otype
+            otype=otype,
         )
 
         if output_csv_path:
             output_csv_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_csv_path, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(["main_id", "ra_deg", "dec_deg", "distance_arcsec", "otype"])
-                writer.writerow([obj.object_id, obj.ra_deg, obj.dec_deg, obj.distance_arcsec, obj.otype])
+                writer.writerow(
+                    ["main_id", "ra_deg", "dec_deg", "distance_arcsec", "otype"]
+                )
+                writer.writerow(
+                    [
+                        obj.object_id,
+                        obj.ra_deg,
+                        obj.dec_deg,
+                        obj.distance_arcsec,
+                        obj.otype,
+                    ]
+                )
             print(f"Résultat SIMBAD exporté vers {output_csv_path}")
 
         return obj
@@ -49,6 +61,7 @@ def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
     except Exception as e:
         print(f"Erreur pour {coord_string}: {e}")
         import traceback
+
         traceback.print_exc()
 
 
@@ -69,9 +82,7 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
             otype = result["otype"][i] if "otype" in result.colnames else "Unknown"
             objects.append(
                 identifiedObject.IdentifiedObjectSkyCoord(
-                    object_id=result["main_id"][i],
-                    coord=obj_coords[i],
-                    otype=otype
+                    object_id=result["main_id"][i], coord=obj_coords[i], otype=otype
                 )
             )
 
@@ -81,7 +92,9 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
                 writer = csv.writer(f)
                 writer.writerow(["main_id", "otype", "ra_deg", "dec_deg"])
                 for obj in objects:
-                    writer.writerow([obj.object_id, obj.otype, obj.coord.ra.deg, obj.coord.dec.deg])
+                    writer.writerow(
+                        [obj.object_id, obj.otype, obj.coord.ra.deg, obj.coord.dec.deg]
+                    )
             print(f"Résultats SIMBAD exportés vers {output_csv_path}")
 
         return objects
@@ -89,5 +102,6 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
     except Exception as e:
         print(f"Erreur query_simbad_skycoord: {e}")
         import traceback
+
         traceback.print_exc()
         return []

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from astropy.coordinates import SkyCoord
 
 
