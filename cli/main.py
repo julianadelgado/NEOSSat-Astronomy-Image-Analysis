@@ -3,13 +3,12 @@ import shutil
 from pathlib import Path
 
 import typer
+from astropy.io import fits
 
 from acquisition.data_manager import DataManager
 from acquisition.fits_handler import FitsHandler
 from acquisition.image_stacking import ImageStacking
 from cli.validator import validate_data_directory, validate_email
-from astropy.io import fits
-
 from preprocessing.preprocessors.star_detection import StarDetection
 
 from .config import load_config
