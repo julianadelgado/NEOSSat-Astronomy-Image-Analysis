@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 
 import typer
@@ -102,6 +103,8 @@ def main(
                         clean_name, data_manager, date_obs, cfg.results_dir
                     )
                     preprocessor.stack_images()
+                    print(f"Cleaning up temporary folder: {clean_name} ")
+                    shutil.rmtree(clean_name)
                 data_manager.fits_image.close()
 
     if run_stars:
