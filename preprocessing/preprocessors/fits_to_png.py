@@ -11,18 +11,12 @@ class FitsToPng(IPreprocessor):
     def name(self) -> str:
         return "fits_to_png"
 
-    def run(
-        self,
-        image: np.ndarray,
-        header,
-        output_dir: Path,
-        filename: str = "image_normalisee.png",
-    ) -> dict:
+    def run(self, image: np.ndarray, header, output_dir: Path) -> dict:
         """
         Generates a normalized PNG from the original FITS image data.
         """
         output_dir.mkdir(parents=True, exist_ok=True)
-        png_path = output_dir / filename
+        png_path = output_dir / "image_normalisee.png"
 
         img_data = image.astype(float)
         img_data -= np.min(img_data)

@@ -1,14 +1,11 @@
-import pytest
-import typer
-
-from cli.validator import validate_data_directory
+from acquisition.directory_manager import DataDirectoryManager
 
 
-def test_validate_data_directory_valid(tmp_path):
-    result = validate_data_directory(str(tmp_path))
-    assert result == str(tmp_path)
+def test_check_data_directory_valid(tmp_path):
+    dir_manager = DataDirectoryManager(str(tmp_path))
+    assert dir_manager.check_data_directory() is True
 
 
-def test_validate_data_directory_invalid():
-    with pytest.raises(typer.BadParameter):
-        validate_data_directory("/invalid/directory/path")
+def test_check_data_directory_invalid():
+    dir_manager = DataDirectoryManager("/invalid/directory/path")
+    assert dir_manager.check_data_directory() is False

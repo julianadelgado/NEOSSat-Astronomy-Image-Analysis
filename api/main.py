@@ -3,7 +3,6 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 
-from detectors import dl_streak_detector
 from preprocessing.core.preprocess_request import PreprocessRequest
 from preprocessing.metrics import Metrics
 from preprocessing.pipeline import Pipeline
@@ -19,8 +18,6 @@ pipeline = Pipeline(
     preprocessors=[StarDetection(), StarDetectionLegacy(), FitsToPng()],
     metrics=metrics,
 )
-
-dl_streak_detector = dl_streak_detector.DLStreakDetector()
 
 
 @app.post("/preprocessing")
@@ -44,14 +41,6 @@ def run_preprocessing(req: PreprocessRequest):
         selected=req.preprocessors,
         output_dir=Path("results"),
     )
-    return {"status": "ok", "results": results}
-
-
-@app.post("/streak-detection")
-def run_streak_detection():
-
-    results = dl_streak_detector.run()
-
     return {"status": "ok", "results": results}
 
 
