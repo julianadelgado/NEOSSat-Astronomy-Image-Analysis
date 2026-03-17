@@ -19,6 +19,15 @@ Thank you for your interest in contributing! This document explains how to repor
 - This project uses `uv` for dependency and environment management; see the [README.md](./README.md) for setup instructions.
 - The CI automatically runs formatting, linting, and tests.
 
+## Code Style
+
+Before pushing a branch or opening a PR, run the following check locally:
+```bash
+uv run black . && uv run isort . && uv run flake8 .
+```
+
+`black` and `isort` will modify files in place — commit those changes before pushing. `flake8` only reports issues and will not modify files. PRs that fail any of these checks will not be merged.
+
 ## Branching & Commit Guidelines
 
 - Branch from `main`. Use descriptive branch names: `fix/<short-desc>`, `feat/<short-desc>`.

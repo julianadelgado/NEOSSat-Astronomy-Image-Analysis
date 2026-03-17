@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.11"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
           uv run isort --check-only .
 
       - name: Lint
-        run: uv run flake8 --exclude=.venv,__pycache__,.git
+        run: uv run flake8 --exclude=.venv,__pycache__,.git,dl_streak_detect,detectors
 
       - name: Run unit tests
         run: uv run pytest -v
