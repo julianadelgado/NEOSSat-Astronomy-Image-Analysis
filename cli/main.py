@@ -9,6 +9,10 @@ from acquisition.data_manager import DataManager
 from acquisition.fits_handler import FitsHandler
 from acquisition.image_stacking import ImageStacking
 from cli.validator import validate_data_directory, validate_email
+
+from detectors.dl_streak_detector import DLStreakDetector
+from preprocessing.metrics import Metrics
+from preprocessing.pipeline import Pipeline
 from preprocessing.preprocessors.star_detection import StarDetection
 
 from .config import load_config
@@ -122,7 +126,8 @@ def main(
 
     if run_streaks:
         print("Running streak detection...")
-        # TODO Call streak detection function here
+        detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
+        results = detector.run()
 
 
 if __name__ == "__main__":
