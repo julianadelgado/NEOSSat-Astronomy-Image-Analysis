@@ -3,40 +3,44 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 
-from detectors import dl_streak_detector
 from preprocessing.core.preprocess_request import PreprocessRequest
 from preprocessing.metrics import Metrics
 from preprocessing.pipeline import Pipeline
 from preprocessing.preprocessors.fits_to_png import FitsToPng
 from preprocessing.preprocessors.star_detection import StarDetection
+from preprocessing.preprocessors.star_detection_legacy import StarDetectionLegacy
 
 app = FastAPI()
 
 metrics = Metrics()
 
 pipeline = Pipeline(
-    preprocessors=[StarDetection(), FitsToPng()],
+    preprocessors=[StarDetection(), StarDetectionLegacy(), FitsToPng()],
     metrics=metrics,
 )
-
-dl_streak_detector = dl_streak_detector.DLStreakDetector()
 
 
 @app.post("/preprocessing")
 def run_preprocessing(req: PreprocessRequest):
+    req_path = Path(req.fits_file)
+
+    if not req_path.exists():
+        project_root = Path(__file__).resolve().parents[1]
+        candidate = project_root / req_path
+        if candidate.exists():
+            fits_path = candidate
+        else:
+            raise FileNotFoundError(
+                f"File {req.fits_file} not found in current directory or project root."
+            )
+    else:
+        fits_path = req_path
+
     results = pipeline.run(
-        fits_path=Path(req.fits_file),
+        fits_path=fits_path,
         selected=req.preprocessors,
         output_dir=Path("results"),
     )
-    return {"status": "ok", "results": results}
-
-
-@app.post("/streak-detection")
-def run_streak_detection():
-
-    results = dl_streak_detector.run()
-
     return {"status": "ok", "results": results}
 
 

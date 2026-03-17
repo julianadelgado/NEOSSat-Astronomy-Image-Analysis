@@ -37,7 +37,7 @@ cli = [
     "protobuf<4.21.3"
 ]
 api = [
-    "matplotlib>=3.2.2",
+    "matplotlib<3.8",
     "photutils>=1.12.0",
     "fastapi==0.110.0",
     "uvicorn[standard]==0.29.0",
@@ -49,9 +49,11 @@ api = [
     "skyfield",
     "pandas",
     "seaborn",
+    "httpx",
     "tqdm>=4.41.0",
     "requests>=2.23.0",
-    "protobuf<4.21.3"
+    "protobuf<4.21.3",
+    "astroquery>=0.4.11"
 ]
 gui = [
     "pyqt6>=6.10.2",
@@ -86,4 +88,3 @@ pythonpath = ["."]
 dev = [
     "pytest>=9.0.2",
 ]
-

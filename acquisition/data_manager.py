@@ -57,25 +57,14 @@ class DataManager:
             return {}
 
     def fits_to_png(self, output_path):
-        PERCENTILE_LOWER_BOUND = 15
-        PERCENTILE_UPPER_BOUND = 99.5
-
         if self.fits_image is None:
             return
         try:
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-            data = self.fits_image[0].data.astype(np.float32)
-
-            vmin = np.percentile(data, PERCENTILE_LOWER_BOUND)
-            vmax = np.percentile(data, PERCENTILE_UPPER_BOUND)
-            if vmax <= vmin:
-                print("Skipping conversion due to invalid percentile bounds.")
-                return
-
-            data_scaled = np.clip((data - vmin) / (vmax - vmin) * 255, 0, 255)
-
-            image = Image.fromarray(data_scaled.astype(np.uint8))
+            data = self.fits_image[0].data
+            data = (data - np.min(data)) / (np.max(data) - np.min(data)) * 255
+            image = Image.fromarray(data.astype(np.uint8))
             image.save(output_path)
 
             print(f"FITS image converted to PNG and saved at: {output_path}")
