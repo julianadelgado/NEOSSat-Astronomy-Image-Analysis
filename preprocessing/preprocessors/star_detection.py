@@ -23,7 +23,7 @@ from matplotlib import pyplot as plt  # noqa: E402
 SIGMA = 3.0
 DAO_FINDER_FWHM = 3.0
 DAO_FINDER_THRESHOLD = 5.0
-MATCH_THRESHOLD = 5.0 * units.arcsec
+MATCH_THRESHOLD = 30.0 * units.arcsec
 
 CANDIDATE_NOT_FOUND_STRING = "not_found"
 
@@ -317,10 +317,11 @@ class StarDetection(IPreprocessor):
         map_path = output_dir / "detected_stars_map.png"
 
         fig, ax = plt.subplots(figsize=FIGSIZE)
+        fig.patch.set_facecolor('black')
         ax.set_facecolor('black')
+        ax.axis('off')
         ax.set_xlim(0, image.shape[1])
         ax.set_ylim(0, image.shape[0])
-        # ax.invert_yaxis()
 
         for candidate in matched_candidates:
             x_star = candidate["x"]
@@ -347,10 +348,7 @@ class StarDetection(IPreprocessor):
                 linewidth=1.5
             )
 
-        ax.set_xlabel("X Pixel")
-        ax.set_ylabel("Y Pixel")
-        ax.set_title("Detected Stars Map")
-        plt.savefig(map_path, dpi=300, bbox_inches='tight')
+        plt.savefig(map_path, dpi=300, bbox_inches='tight', pad_inches=0)
         plt.close(fig)
 
         print(f"Region map with detected stars saved to {map_path}")
@@ -398,7 +396,9 @@ class StarDetection(IPreprocessor):
         map_path = output_dir / "region_catalog_map.png"
 
         fig, ax = plt.subplots(figsize=FIGSIZE)
+        fig.patch.set_facecolor('black')
         ax.set_facecolor('black')
+        ax.axis('off')
         ax.set_xlim(0, image.shape[1])
         ax.set_ylim(0, image.shape[0])
 
@@ -419,10 +419,7 @@ class StarDetection(IPreprocessor):
                 linewidth=1.5
             )
 
-        ax.set_xlabel("X Pixel")
-        ax.set_ylabel("Y Pixel")
-        ax.set_title("SIMBAD Region Catalog Map")
-        plt.savefig(map_path, dpi=300, bbox_inches='tight')
+        plt.savefig(map_path, dpi=300, bbox_inches='tight', pad_inches=0)
         plt.close(fig)
 
         print(f"Region catalog map saved to {map_path}")
