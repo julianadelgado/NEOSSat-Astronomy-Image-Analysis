@@ -113,7 +113,7 @@ def main(
         for filename in os.listdir(cfg.data_dir):
             if filename.endswith(".fits"):
                 fits_path = Path(cfg.data_dir) / filename
-                output_dir = Path(cfg.data_dir) / filename.replace(".fits", "")
+                output_dir = Path(cfg.results_dir) / filename.replace(".fits", "")
                 output_dir.mkdir(parents=True, exist_ok=True)
 
                 image = fits.getdata(fits_path)
