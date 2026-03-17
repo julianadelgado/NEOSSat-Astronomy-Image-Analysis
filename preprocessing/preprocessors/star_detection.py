@@ -11,6 +11,7 @@ from photutils.detection import DAOStarFinder
 from preprocessing.analysis.heatmap import generate_heatmap
 from preprocessing.core.preprocessor import IPreprocessor
 from preprocessing.core.queries import query_simbad_skycoord
+from preprocessing.core.map_groups import map_to_group
 
 import matplotlib
 matplotlib.use("Agg")
@@ -29,6 +30,18 @@ CANDIDATE_NOT_FOUND_STRING = "not_found"
 FIGSIZE = (10, 10)
 VMIN_PERCENTILE = 5
 VMAX_PERCENTILE = 99
+
+TYPE_SYMBOLS = {
+    "star": {"marker": "+", "color": "red"},
+    "planet": {"marker": "*", "color": "green"},
+    "star cluster": {"marker": "D", "color": "magenta"},
+    "galaxies": {"marker": "o", "color": "blue"},
+    "galaxies set": {"marker": "s", "color": "orange"},
+    "spectral source": {"marker": "^", "color": "cyan"},
+    "nebula": {"marker": "v", "color": "yellow"},
+    "cloud": {"marker": "p", "color": "brown"},
+    "Default": {"marker": "x", "color": "purple"},
+}
 
 
 class StarDetection(IPreprocessor):
@@ -49,6 +62,13 @@ class StarDetection(IPreprocessor):
             center,
             radius,
             output_csv_path=csv_path
+        )
+
+        self._render_region_catalog_map(
+            image=image,
+            wcs=wcs,
+            region_catalog=region_catalog,
+            output_dir=output_dir
         )
 
         detected_candidates = self._detect_sources(image, wcs)
@@ -151,6 +171,7 @@ class StarDetection(IPreprocessor):
                 matched.append({
                     **src,
                     "object_id": CANDIDATE_NOT_FOUND_STRING,
+                    "otype": "Default",
                     "deviation_arcsec": None
                 })
             return matched
@@ -168,12 +189,14 @@ class StarDetection(IPreprocessor):
                 matched_candidates.append({
                     **src,
                     "object_id": region_catalog[idx[i]].object_id,
+                    "otype": getattr(region_catalog[idx[i]], "otype", "Default"),
                     "deviation_arcsec": separation.arcsec
                 })
             else:
                 matched_candidates.append({
                     **src,
                     "object_id": CANDIDATE_NOT_FOUND_STRING,
+                    "otype": "Default",
                     "deviation_arcsec": separation.arcsec
                 })
 
@@ -229,7 +252,13 @@ class StarDetection(IPreprocessor):
 
         print(f"Star detection results exported to {csv_path}")
 
-    def _render_region_image(self, image, wcs, detected_candidates, matched_candidates, output_dir: Path):
+    def _render_region_image(
+            self,
+            image,
+            wcs,
+            detected_candidates,
+            matched_candidates,
+            output_dir: Path):
 
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / "detected_stars_img.png"
@@ -293,15 +322,6 @@ class StarDetection(IPreprocessor):
         ax.set_ylim(0, image.shape[0])
         # ax.invert_yaxis()
 
-        type_symbols = {
-            "Star": {"marker": "+", "color": "red"},
-            "Galaxy": {"marker": "o", "color": "blue"},
-            "Planetary Nebula": {"marker": "*", "color": "green"},
-            "Open Cluster": {"marker": "D", "color": "magenta"},
-            "Globular Cluster": {"marker": "s", "color": "orange"},
-            "Default": {"marker": "x", "color": "purple"}
-        }
-
         for candidate in matched_candidates:
             x_star = candidate["x"]
             y_star = candidate["y"]
@@ -313,7 +333,8 @@ class StarDetection(IPreprocessor):
 
             otype = candidate.get("otype", "Default")
 
-            symbol_info = type_symbols.get(otype, type_symbols["Default"])
+            group = map_to_group(otype)
+            symbol_info = TYPE_SYMBOLS.get(group, TYPE_SYMBOLS["Default"])
 
             ax.plot(
                 x_star,
@@ -334,7 +355,13 @@ class StarDetection(IPreprocessor):
 
         print(f"Region map with detected stars saved to {map_path}")
 
-    def _render_heatmaps(self, image, wcs, detected_candidates, matched_candidates, output_dir: Path):
+    def _render_heatmaps(
+            self,
+            image,
+            wcs,
+            detected_candidates,
+            matched_candidates, 
+            output_dir: Path):
         """Generate heatmaps for detected candidates."""
 
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -359,3 +386,43 @@ class StarDetection(IPreprocessor):
         )
 
         print(f"Heatmap of detected stars saved to {heatmap_path}")
+    
+    def _render_region_catalog_map(self, image, wcs, region_catalog, output_dir: Path):
+        """Generate a map showing all objects in the SIMBAD region catalog."""
+
+        if len(region_catalog) == 0:
+            print("Region catalog is empty, nothing to render.")
+            return
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        map_path = output_dir / "region_catalog_map.png"
+
+        fig, ax = plt.subplots(figsize=FIGSIZE)
+        ax.set_facecolor('black')
+        ax.set_xlim(0, image.shape[1])
+        ax.set_ylim(0, image.shape[0])
+
+        for obj in region_catalog:
+            x_pix, y_pix = wcs.world_to_pixel(obj.coord)
+            otype = getattr(obj, "otype", "Default")
+            group = map_to_group(otype)
+            symbol_info = TYPE_SYMBOLS.get(group, TYPE_SYMBOLS["Default"])
+
+            ax.plot(
+                x_pix,
+                y_pix,
+                marker=symbol_info["marker"],
+                color=symbol_info["color"],
+                markersize=8,
+                label=obj.object_id,
+                fillstyle="none",
+                linewidth=1.5
+            )
+
+        ax.set_xlabel("X Pixel")
+        ax.set_ylabel("Y Pixel")
+        ax.set_title("SIMBAD Region Catalog Map")
+        plt.savefig(map_path, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
+        print(f"Region catalog map saved to {map_path}")
