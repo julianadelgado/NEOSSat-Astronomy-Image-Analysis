@@ -3,13 +3,12 @@ import shutil
 from pathlib import Path
 
 import typer
+from astropy.io import fits
 
 from acquisition.data_manager import DataManager
 from acquisition.fits_handler import FitsHandler
 from acquisition.image_stacking import ImageStacking
 from cli.validator import validate_data_directory, validate_email
-from preprocessing.metrics import Metrics
-from preprocessing.pipeline import Pipeline
 from preprocessing.preprocessors.star_detection import StarDetection
 
 from .config import load_config
@@ -109,13 +108,16 @@ def main(
 
     if run_stars:
         print("Running star detection...")
-        # TODO verify star detection call
-        pipeline = Pipeline([StarDetection()], Metrics())
+        detector = StarDetection()
         for filename in os.listdir(cfg.data_dir):
             if filename.endswith(".fits"):
                 fits_path = Path(cfg.data_dir) / filename
-                output_dir = Path(cfg.data_dir) / filename.replace(".fits", "")
-                results = pipeline.run(fits_path, ["star_detection"], output_dir)
+                output_dir = Path(cfg.results_dir) / filename.replace(".fits", "")
+                output_dir.mkdir(parents=True, exist_ok=True)
+
+                image = fits.getdata(fits_path)
+                header = fits.getheader(fits_path)
+                results = detector.run(image, header, output_dir)
                 print(f"{filename}: {results}")
 
     if run_streaks:
