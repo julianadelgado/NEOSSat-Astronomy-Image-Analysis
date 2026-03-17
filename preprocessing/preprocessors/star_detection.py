@@ -113,6 +113,7 @@ class StarDetection(IPreprocessor):
         return center, radius
 
     def _detect_sources(self, image: np.ndarray, wcs: WCS):
+        """Run source detection on the image using DAOStarFinder"""
 
         print("Running source detection...")
 
@@ -155,6 +156,7 @@ class StarDetection(IPreprocessor):
         return detected_candidates
 
     def _match_candidates(self, detected_candidates, region_catalog):
+        """Match detected candidates with SIMBAD catalog objects"""
 
         print("Matching detected candidates with catalog objects...")
 
@@ -215,6 +217,7 @@ class StarDetection(IPreprocessor):
         return matched_candidates
 
     def _export_results(self, matched_candidates, output_dir: Path):
+        """Export matched candidates to a CSV file"""
 
         output_dir.mkdir(parents=True, exist_ok=True)
         csv_path = output_dir / "star_detection_results.csv"
@@ -265,6 +268,7 @@ class StarDetection(IPreprocessor):
     def _render_region_image(
         self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
     ):
+        """Generate an image of the region with detected stars highlighted"""
 
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / "detected_stars_img.png"
@@ -315,6 +319,8 @@ class StarDetection(IPreprocessor):
     def _render_region_map(
         self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
     ):
+        """Generate an image of the region with stars highlighted with otypes"""
+
         output_dir.mkdir(parents=True, exist_ok=True)
         map_path = output_dir / "detected_stars_map.png"
 
