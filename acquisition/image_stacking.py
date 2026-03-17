@@ -12,7 +12,7 @@ class ImageStacking:
         self.data_manager = data_manager
         self.date_obs = date_obs
         self.results_dir = results_dir
-    
+
     def align_images(self, img_path, img_name, reference_data, data_arrays):
         try:
             with fits.open(img_path) as img_fits:
@@ -44,7 +44,6 @@ class ImageStacking:
             print(f"Error opening FITS file {img_name}: {e}")
         return reference_data, data_arrays
 
-
     def stack_images(self):
         PERCENTILE_LOWER_BOUND = 40
         PERCENTILE_UPPER_BOUND = 99.9
@@ -55,7 +54,10 @@ class ImageStacking:
         reference_data = None
 
         reference_data, data_arrays = self.align_images(
-            original_image_path, os.path.basename(original_image_path), reference_data, data_arrays
+            original_image_path,
+            os.path.basename(original_image_path),
+            reference_data,
+            data_arrays,
         )
 
         for img_name in all_images:
