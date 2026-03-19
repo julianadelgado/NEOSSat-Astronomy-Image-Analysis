@@ -10,8 +10,6 @@ from acquisition.fits_handler import FitsHandler
 from acquisition.image_stacking import ImageStacking
 from cli.validator import validate_data_directory, validate_email
 from detectors.dl_streak_detector import DLStreakDetector
-from preprocessing.metrics import Metrics
-from preprocessing.pipeline import Pipeline
 from preprocessing.preprocessors.star_detection import StarDetection
 
 from .config import load_config

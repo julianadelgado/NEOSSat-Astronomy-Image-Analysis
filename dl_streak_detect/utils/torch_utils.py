@@ -58,7 +58,7 @@ def git_describe(path=Path(__file__).parent):  # path must be a directory
         return subprocess.check_output(
             s, shell=True, stderr=subprocess.STDOUT
         ).decode()[:-1]
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         return ""  # not a git repository
 
 
@@ -135,7 +135,7 @@ def profile(x, ops, n=100, device=None):
         dtf, dtb, t = 0.0, 0.0, [0.0, 0.0, 0.0]  # dt forward, backward
         try:
             flops = thop.profile(m, inputs=(x,), verbose=False)[0] / 1e9 * 2  # GFLOPS
-        except:
+        except Exception:
             flops = 0
 
         for _ in range(n):
@@ -145,7 +145,7 @@ def profile(x, ops, n=100, device=None):
             try:
                 _ = y.sum().backward()
                 t[2] = time_synchronized()
-            except:  # no backward method
+            except Exception:  # no backward method
                 t[2] = float("nan")
             dtf += (t[1] - t[0]) * 1000 / n  # ms per op forward
             dtb += (t[2] - t[1]) * 1000 / n  # ms per op backward
