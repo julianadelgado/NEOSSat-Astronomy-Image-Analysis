@@ -14,4 +14,4 @@ Start the server.
 
 ## Architecture
 
-![UML Class Diagram](/preprocessing/docs/class.png)
+![UML Class Diagram](/wiki/5-building-block-view/class.png)
