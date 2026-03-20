@@ -1,0 +1,28 @@
+@startuml deployment
+
+actor user as user
+
+node "Generic Server" as server {
+	rectangle "Linux-based OS" as os {
+		rectangle "Python 3.11" {
+			component "application" as app
+		}
+	}
+}
+
+node "Client computer" as client {
+	component "SSH client" as ssh
+}
+
+cloud "NEOSSAT infrastructure" as cloud {
+	database "Image database" as db
+	component "Email server" as email
+}
+
+user ..> ssh
+ssh --> os : SSH
+
+db --> app : images
+app --> email : SMTP
+
+@enduml
