@@ -1,0 +1,37 @@
+@startuml component-main
+
+actor User as user
+
+cloud "CSA infrastructure" as infra {
+	component [Database] as database
+	component [Email Server] as emailServer
+}
+
+node "App" as app {
+	component [API] as api
+	component [CUI] as cui
+	component [GUI] as gui
+
+	component [DataManager] as dataManager
+	component [EmailService] as emailService
+	component [StreakDetector (yolo Model)] as streakDetector
+	component [ReportGenerator] as reportGenerator
+
+}
+
+user ..> cui : "<uses>"
+user ..> gui : "<uses>"
+user ..> api : "<uses>"
+
+cui --> api : "HTTP"
+gui --> api : "HTTP"
+
+database --> dataManager
+dataManager --> api
+api --> streakDetector
+streakDetector --> api
+api --> reportGenerator
+reportGenerator --> emailService
+emailService --> emailServer
+
+@enduml
