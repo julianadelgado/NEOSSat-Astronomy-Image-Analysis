@@ -1,0 +1,4 @@
+email: user@example.com
+data_dir: ./data
+results_dir: ./results
+reports_dir: ./reports

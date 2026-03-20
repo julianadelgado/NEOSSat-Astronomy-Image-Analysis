@@ -1,12 +1,11 @@
 import ftplib
 import os
 import sys
+from pathlib import Path
 
-import numpy as np
 import requests
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-from astropy.io import fits
 from astroquery.cadc import Cadc
 from astroquery.skyview import SkyView
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
@@ -20,7 +19,6 @@ from PyQt6.QtWidgets import (
     QDoubleSpinBox,
     QGroupBox,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
     QLineEdit,
     QListWidget,
@@ -29,10 +27,12 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
+    QSplitter,
     QStackedWidget,
-    QTableWidget,
-    QTableWidgetItem,
     QTabWidget,
+    QTextEdit,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -689,138 +689,192 @@ class VisualizeTab(QWidget):
     def __init__(self, data_folder):
         super().__init__()
         self.data_folder = data_folder
-        self.layout = QHBoxLayout()
+        self.project_root = Path(os.path.abspath(__file__)).parent.parent
+
+        self.layout = QHBoxLayout(self)
 
         # Left side: File List
-        left_layout = QVBoxLayout()
-        self.file_list = QListWidget()
-        self.file_list.itemClicked.connect(self.load_image)
-        self.refresh_btn = QPushButton("Refresh List")
-        self.refresh_btn.clicked.connect(self.refresh_list)
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
 
-        left_layout.addWidget(QLabel("Downloaded FITS Files:"))
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search files...")
+        self.search_input.textChanged.connect(self.filter_files)
+
+        self.file_tree = QTreeWidget()
+        self.file_tree.setHeaderHidden(True)
+        self.file_tree.itemClicked.connect(self.on_file_select)
+
+        self.refresh_btn = QPushButton("Rescan Directory")
+        self.refresh_btn.clicked.connect(self.scan_files)
+
+        left_layout.addWidget(QLabel("FITS Files found:"))
+        left_layout.addWidget(self.search_input)
+        left_layout.addWidget(self.file_tree)
         left_layout.addWidget(self.refresh_btn)
-        left_layout.addWidget(self.file_list)
 
-        container = QWidget()
-        container.setLayout(left_layout)
-        container.setMaximumWidth(250)
-        self.layout.addWidget(container)
+        left_widget.setMaximumWidth(300)
 
-        # Right side: Plot + Header
-        right_layout = QVBoxLayout()
-        self.header_label = QLabel("Select a file to view")
-        self.header_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        right_layout.addWidget(self.header_label)
+        self.layout.addWidget(left_widget)
 
-        self.figure = Figure()
+        # Right side: Splitter for Plot + Metadata
+        right_splitter = QSplitter(Qt.Orientation.Vertical)
+
+        # Image
+        image_widget = QWidget()
+        image_layout = QVBoxLayout(image_widget)
+        self.figure = Figure(figsize=(5, 5))
         self.canvas = FigureCanvas(self.figure)
-        right_layout.addWidget(self.canvas)
+        image_layout.addWidget(self.canvas)
+        right_splitter.addWidget(image_widget)
 
-        # Header Section
-        self.toggle_header_btn = QPushButton("Show FITS Header")
-        self.toggle_header_btn.setCheckable(True)
-        self.toggle_header_btn.clicked.connect(self.toggle_header)
-        right_layout.addWidget(self.toggle_header_btn)
+        # Metadata
+        metadata_widget = QWidget()
+        metadata_layout = QVBoxLayout(metadata_widget)
+        metadata_layout.addWidget(QLabel("Image Info & Metadata:"))
+        self.metadata_text = QTextEdit()
+        self.metadata_text.setReadOnly(True)
+        self.metadata_text.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+        metadata_layout.addWidget(self.metadata_text)
+        right_splitter.addWidget(metadata_widget)
 
-        self.header_table = QTableWidget()
-        self.header_table.setColumnCount(3)
-        self.header_table.setHorizontalHeaderLabels(["Key", "Value", "Comment"])
-        self.header_table.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeMode.Interactive
-        )
-        self.header_table.horizontalHeader().setStretchLastSection(True)
-        self.header_table.setAlternatingRowColors(True)
-        self.header_table.hide()
-        right_layout.addWidget(self.header_table)
+        # Give more weight to image (first item, index 0)
+        right_splitter.setStretchFactor(0, 3)
+        right_splitter.setStretchFactor(1, 1)
 
-        right_container = QWidget()
-        right_container.setLayout(right_layout)
-        self.layout.addWidget(right_container)
+        self.layout.addWidget(right_splitter, stretch=1)
+        self.all_files = []
+        self.scan_files()
 
-        self.setLayout(self.layout)
-        self.refresh_list()
+    def scan_files(self):
+        self.all_files = []
+        self.search_input.clear()
+
+        exclude_dirs = {
+            ".venv",
+            ".git",
+            "__pycache__",
+            "node_modules",
+            ".idea",
+            ".vscode",
+        }
+
+        try:
+            for path in self.project_root.rglob("*"):
+                if any(part in exclude_dirs for part in path.parts):
+                    continue
+                if path.is_file() and path.suffix.lower() in [".fits", ".fit"]:
+                    self.all_files.append(path)
+
+            self.all_files.sort()
+            self.populate_tree()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to scan directory: {e}")
+
+    def populate_tree(self, search_term=""):
+        self.file_tree.clear()
+        search_term = search_term.lower()
+        folders = {}
+
+        for file_path in self.all_files:
+            try:
+                rel_path = file_path.relative_to(self.project_root)
+                parent_dir = str(rel_path.parent)
+                if parent_dir == ".":
+                    parent_dir = "Root"
+            except ValueError:
+                parent_dir = "Other"
+
+            if (
+                search_term
+                and search_term not in file_path.name.lower()
+                and search_term not in parent_dir.lower()
+            ):
+                continue
+
+            if parent_dir not in folders:
+                folder_item = QTreeWidgetItem([parent_dir])
+                self.file_tree.addTopLevelItem(folder_item)
+                folder_item.setExpanded(True)
+                folders[parent_dir] = folder_item
+
+            file_item = QTreeWidgetItem([file_path.name])
+            file_item.setData(0, Qt.ItemDataRole.UserRole, str(file_path))
+            folders[parent_dir].addChild(file_item)
+
+    def filter_files(self, text):
+        self.populate_tree(text)
 
     def refresh_list(self):
-        self.file_list.clear()
-        if os.path.exists(self.data_folder):
-            # Walk through directory to find all FITS files recursively
-            for root, _, files in os.walk(self.data_folder):
-                for f in files:
-                    if f.casefold().endswith(".fits"):
-                        full_path = os.path.join(root, f)
-                        # Show path relative to data folder so user sees subfolders
-                        rel_path = os.path.relpath(full_path, self.data_folder)
-                        self.file_list.addItem(rel_path)
+        self.scan_files()
 
-    def toggle_header(self, checked):
-        if checked:
-            self.header_table.show()
-            self.toggle_header_btn.setText("Hide FITS Header")
-        else:
-            self.header_table.hide()
-            self.toggle_header_btn.setText("Show FITS Header")
+    def on_file_select(self, item, column):
+        file_path_str = item.data(0, Qt.ItemDataRole.UserRole)
+        if not file_path_str:
+            return  # Probably a folder
 
-    def load_image(self, item):
-        # item.text() is now a relative path like "M31/image.fits"
-        filepath = os.path.join(self.data_folder, item.text())
+        self.display_fits(Path(file_path_str))
+
+    def display_fits(self, file_path):
+        import numpy as np
+        from astropy.io import fits
+
         try:
-            with fits.open(filepath) as hdul:
-                # Try to find image data in HDUs
+            with fits.open(file_path) as hdul:
                 data = None
                 header = None
                 for hdu in hdul:
-                    if hdu.data is not None and len(hdu.data.shape) >= 2:
-                        data = hdu.data
-                        header = hdu.header
-                        break
+                    if hdu.data is not None:
+                        if getattr(hdu, "is_image", False) or (
+                            isinstance(hdu.data, np.ndarray) and hdu.data.ndim >= 2
+                        ):
+                            data = hdu.data
+                            header = hdu.header
+                            break
 
-                if data is not None:
-                    self.figure.clear()
-                    ax = self.figure.add_subplot(111)
+                self.metadata_text.clear()
+                self.figure.clear()
+                ax = self.figure.add_subplot(111)
 
-                    # Robust scaling for visualization (1-99 percentile)
-                    # Handle potential NaNs or infinite values
-                    valid_data = data[np.isfinite(data)]
-                    if valid_data.size > 0:
-                        vmin, vmax = np.percentile(valid_data, [1, 99])
-                    else:
-                        vmin, vmax = np.min(data), np.max(data)
-
-                    cax = ax.imshow(
-                        data, cmap="gray", vmin=vmin, vmax=vmax, origin="lower"
-                    )
-                    self.figure.colorbar(cax, ax=ax)
-                    ax.set_title(item.text())
+                if data is None:
+                    ax.text(0.5, 0.5, "No image data found in FITS", ha="center")
+                    ax.axis("off")
                     self.canvas.draw()
-                    self.header_label.setText(f"Viewing: {item.text()}")
+                    self.metadata_text.setText("No image data found.\n")
+                    return
 
-                    # Populate Header
-                    if header:
-                        self.header_table.setRowCount(0)
-                        self.header_table.setRowCount(len(header))
-                        for i, (key, value) in enumerate(header.items()):
-                            # Key
-                            k_item = QTableWidgetItem(str(key))
-                            self.header_table.setItem(i, 0, k_item)
-                            # Value
-                            v_item = QTableWidgetItem(str(value))
-                            self.header_table.setItem(i, 1, v_item)
-                            # Comment (using cards)
-                            comment = (
-                                header.comments[key] if key in header.comments else ""
-                            )
-                            c_item = QTableWidgetItem(str(comment))
-                            self.header_table.setItem(i, 2, c_item)
+                if header is not None:
+                    metadata_str = f"Image dimensions: {data.shape}\n"
+                    metadata_str += f"Data type: {data.dtype}\n"
+                    metadata_str += "-" * 40 + "\n"
+                    metadata_str += "FITS Header Metadata:\n"
+                    for key, value in header.items():
+                        metadata_str += f"{key:8s} = {value}\n"
+                    self.metadata_text.setText(metadata_str)
 
-                        self.header_table.resizeColumnToContents(0)
+                while data.ndim > 2:
+                    data = data[0]
 
+                data = np.nan_to_num(data)
+                valid_data = data[np.isfinite(data)]
+                if valid_data.size > 0:
+                    vmin, vmax = np.percentile(valid_data, [1, 99])
                 else:
-                    QMessageBox.warning(
-                        self, "Error", "No valid image data found in FITS file."
-                    )
+                    vmin, vmax = np.min(data), np.max(data)
+
+                _ = ax.imshow(data, cmap="gray", vmin=vmin, vmax=vmax, origin="lower")
+                ax.set_title(file_path.name)
+                ax.axis("off")
+                self.canvas.draw()
+
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open FITS: {str(e)}")
+            self.figure.clear()
+            ax = self.figure.add_subplot(111)
+            ax.text(0.5, 0.5, f"Error loading FITS:\n{str(e)}", ha="center", wrap=True)
+            ax.axis("off")
+            self.canvas.draw()
+            self.metadata_text.setText(f"Error loading FITS:\n{str(e)}\n")
+            print(f"Error loading {file_path}: {e}")
 
 
 class MainWindow(QMainWindow):
