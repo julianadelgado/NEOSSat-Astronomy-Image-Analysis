@@ -1124,7 +1124,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--profile", action="store_true", help="profile model speed")
     opt = parser.parse_args()
+<<<<<<< HEAD
     opt.cfg = check_file(opt.cfg)
+=======
+    opt.cfg = check_file(opt.cfg) 
+>>>>>>> c303b9a (Changed: project struct)
     set_logging()
     device = select_device(opt.device)
 

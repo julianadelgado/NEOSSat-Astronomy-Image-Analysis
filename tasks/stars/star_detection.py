@@ -9,9 +9,15 @@ from astropy.stats import sigma_clipped_stats
 from astropy.wcs import WCS
 from photutils.detection import DAOStarFinder
 
+<<<<<<< HEAD
 from preprocessing.core.preprocessor import IPreprocessor
 from tasks.stars.heatmap import generate_heatmap
 from tasks.stars.map_groups import map_to_group
+=======
+from tasks.stars.heatmap import generate_heatmap
+from tasks.stars.map_groups import map_to_group
+from preprocessing.core.preprocessor import IPreprocessor
+>>>>>>> c303b9a (Changed: project struct)
 from tasks.stars.queries import query_simbad_skycoord
 
 matplotlib.use("Agg")

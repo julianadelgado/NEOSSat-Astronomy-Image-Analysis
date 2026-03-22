@@ -8,8 +8,13 @@ from astropy.wcs import WCS
 from matplotlib.patches import Circle
 from photutils.detection import DAOStarFinder
 
+<<<<<<< HEAD
 from preprocessing.core.preprocessor import IPreprocessor
 from tasks.stars.heatmap import generate_heatmap
+=======
+from tasks.stars.heatmap import generate_heatmap
+from preprocessing.core.preprocessor import IPreprocessor
+>>>>>>> c303b9a (Changed: project struct)
 from tasks.stars.queries import query_simbad
 
 # simbad_acceptance_radius = 2 * units.arcmin
