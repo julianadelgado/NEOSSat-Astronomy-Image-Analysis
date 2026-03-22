@@ -5,7 +5,7 @@ import numpy as np
 from astropy.coordinates import SkyCoord
 from astropy.table import Table
 
-from preprocessing.preprocessors.star_detection import StarDetection
+from tasks.stars.star_detection import StarDetection
 
 
 def test_star_detection_run(tmp_path):
@@ -30,11 +30,11 @@ def test_star_detection_run(tmp_path):
 
     with (
         patch(
-            "preprocessing.preprocessors.star_detection.query_simbad_skycoord",
+            "tasks.stars.star_detection.query_simbad_skycoord",
             return_value=fake_catalog,
         ),
-        patch("preprocessing.preprocessors.star_detection.DAOStarFinder") as mock_dao,
-        patch("preprocessing.preprocessors.star_detection.generate_heatmap"),
+        patch("tasks.stars.star_detection.DAOStarFinder") as mock_dao,
+        patch("tasks.stars.star_detection.generate_heatmap"),
     ):
 
         mock_instance = MagicMock()

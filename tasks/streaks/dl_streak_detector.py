@@ -5,15 +5,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-import yaml
 
-sys.path.append(str(Path(__file__).parent.parent / "dl_streak_detect"))
+sys.path.append(str(Path(__file__).parent / "dl_streak_detect"))
 from cli.config import load_config
-from dl_streak_detect.detect import detect
+from tasks.streaks.dl_streak_detect.detect import detect
 from preprocessing.preprocessors.fits_to_png import FitsToPng
-from services.satellite_db import SatelliteDatabaseService
+from services.satellite_db_service import SatelliteDatabaseService
 
-from .core.IDetector import IDetector
+from .IDetector import IDetector
 
 config = load_config(None)
 
