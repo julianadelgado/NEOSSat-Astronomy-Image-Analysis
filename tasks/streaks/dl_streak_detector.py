@@ -307,7 +307,7 @@ class DLStreakDetector(IDetector):
 
                 if "satellite_correlation" in det:
                     sat = det["satellite_correlation"]
-                    lines.append(f"#### Correlated Satellite")
+                    lines.append("#### Correlated Satellite")
                     lines.append(f"- Name: {sat.get('name')}")
                     lines.append(f"- Catalog ID: {sat.get('catalog_id')}")
                     lines.append(
