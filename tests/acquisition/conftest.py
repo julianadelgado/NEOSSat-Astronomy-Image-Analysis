@@ -50,12 +50,12 @@ def mock_cadc():
         fits.PrimaryHDU(data=np.zeros((10, 10))).writeto(dst)
 
     with (
-        patch("acquisition.fits_handler.Cadc") as MockCadc,
+        patch("handlers.fits_handler.Cadc") as MockCadc,
         patch(
-            "acquisition.fits_handler.download_file",
+            "handlers.fits_handler.download_file",
             return_value="/tmp/fake_download.fits",
         ),
-        patch("acquisition.fits_handler.shutil.move", side_effect=fake_move),
+        patch("handlers.fits_handler.shutil.move", side_effect=fake_move),
     ):
         mock_instance = MockCadc.return_value
         mock_instance.query_region.return_value = results

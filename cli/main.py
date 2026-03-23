@@ -5,8 +5,8 @@ from pathlib import Path
 import typer
 from astropy.io import fits
 
-from acquisition.data_manager import DataManager
-from acquisition.fits_handler import FitsHandler
+from handlers.data_manager import DataManager
+from handlers.fits_handler import FitsHandler
 from tasks.stacking.image_stacking import ImageStacking
 from cli.validator import validate_data_directory, validate_email
 from tasks.streaks.dl_streak_detector import DLStreakDetector
