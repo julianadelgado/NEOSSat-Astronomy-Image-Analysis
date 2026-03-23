@@ -372,16 +372,6 @@ class IKeypoint(nn.Module):
                         ) * self.stride[
                             i
                         ]  # xy
-                        # x_kpt[..., 0::3] = (x_kpt[..., ::3] + kpt_grid_x.repeat(1,1,1,1,17)) * self.stride[i]  # xy
-                        # x_kpt[..., 1::3] = (x_kpt[..., 1::3] + kpt_grid_y.repeat(1,1,1,1,17)) * self.stride[i]  # xy
-                        # print('=============')
-                        # print(self.anchor_grid[i].shape)
-                        # print(self.anchor_grid[i][...,0].unsqueeze(4).shape)
-                        # print(x_kpt[..., 0::3].shape)
-                        # x_kpt[..., 0::3] = ((x_kpt[..., 0::3].tanh() * 2.) ** 3 * self.anchor_grid[i][...,0].unsqueeze(4).repeat(1,1,1,1,self.nkpt)) + kpt_grid_x.repeat(1,1,1,1,17) * self.stride[i]  # xy
-                        # x_kpt[..., 1::3] = ((x_kpt[..., 1::3].tanh() * 2.) ** 3 * self.anchor_grid[i][...,1].unsqueeze(4).repeat(1,1,1,1,self.nkpt)) + kpt_grid_y.repeat(1,1,1,1,17) * self.stride[i]  # xy
-                        # x_kpt[..., 0::3] = (((x_kpt[..., 0::3].sigmoid() * 4.) ** 2 - 8.) * self.anchor_grid[i][...,0].unsqueeze(4).repeat(1,1,1,1,self.nkpt)) + kpt_grid_x.repeat(1,1,1,1,17) * self.stride[i]  # xy
-                        # x_kpt[..., 1::3] = (((x_kpt[..., 1::3].sigmoid() * 4.) ** 2 - 8.) * self.anchor_grid[i][...,1].unsqueeze(4).repeat(1,1,1,1,self.nkpt)) + kpt_grid_y.repeat(1,1,1,1,17) * self.stride[i]  # xy
                         x_kpt[..., 2::3] = x_kpt[..., 2::3].sigmoid()
 
                     y = torch.cat((xy, wh, y[..., 4:], x_kpt), dim=-1)
@@ -911,11 +901,6 @@ class Model(nn.Module):
                 % (mi.weight.shape[1], *b[:5].mean(1).tolist(), b[5:].mean())
             )
 
-    # def _print_weights(self):
-    #     for m in self.model.modules():
-    #         if type(m) is Bottleneck:
-    #             print('%10.3g' % (m.w.detach().sigmoid() * 2))  # shortcut weights
-
     def fuse(self):  # fuse model Conv2d() + BatchNorm2d() layers
         print("Fusing layers... ")
         for m in self.model.modules():
@@ -1139,7 +1124,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--profile", action="store_true", help="profile model speed")
     opt = parser.parse_args()
-    opt.cfg = check_file(opt.cfg)  # check file
+    opt.cfg = check_file(opt.cfg)
     set_logging()
     device = select_device(opt.device)
 
@@ -1150,14 +1135,3 @@ if __name__ == "__main__":
     if opt.profile:
         img = torch.rand(1, 3, 640, 640).to(device)
         y = model(img, profile=True)
-
-    # Profile
-    # img = torch.rand(8 if torch.cuda.is_available() else 1, 3, 640, 640).to(device)
-    # y = model(img, profile=True)
-
-    # Tensorboard
-    # from torch.utils.tensorboard import SummaryWriter
-    # tb_writer = SummaryWriter()
-    # print("Run 'tensorboard --logdir=models/runs' to view tensorboard at http://localhost:6006/")
-    # tb_writer.add_graph(model.model, img)  # add model to tensorboard
-    # tb_writer.add_image('test', img[0], dataformats='CWH')  # add model to tensorboard

@@ -2,15 +2,15 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
-from preprocessing.preprocessors.star_detection_legacy import StarDetectionLegacy
+from tasks.stars.star_detection_legacy import StarDetectionLegacy
 
 
 def test_star_detection_legacy_returns_zero_when_no_sources(tmp_path):
     image = np.zeros((10, 10))
     header = {}
 
-    dao_path = "preprocessing.preprocessors.star_detection_legacy.DAOStarFinder"
-    wcs_path = "preprocessing.preprocessors.star_detection_legacy.WCS"
+    dao_path = "tasks.stars.star_detection_legacy.DAOStarFinder"
+    wcs_path = "tasks.stars.star_detection_legacy.WCS"
 
     with patch(dao_path) as mock_dao, patch(wcs_path):
         mock_instance = MagicMock()
