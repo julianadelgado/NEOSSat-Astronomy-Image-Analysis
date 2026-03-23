@@ -1,6 +1,6 @@
 [project]
 name = "neossat-astronomy-image-analysis"
-version = "0.1.0"
+version = "0.1.1"
 description = "Tool for NEOSSat astronomy image analysis and processing"
 authors = [ 
     { name = "Arthur Boulay" },
@@ -55,18 +55,11 @@ api = [
     "protobuf<4.21.3",
     "astroquery>=0.4.11"
 ]
-gui = [
-    "pyqt6>=6.10.2",
-    "astroquery>=0.4.11",
-    "requests>=2.23.0",
-    "matplotlib>=3.2.2",
-]
 dev = [ "black", "isort", "flake8", "pytest", "httpx>=0.23.0,<0.28.0" ]
 
 [project.scripts]
 neossat-api = "api.main:start"
 neossat-cli = "cli.main:app"
-neossat-gui = "gui.main:main"
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
