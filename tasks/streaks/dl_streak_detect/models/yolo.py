@@ -372,16 +372,6 @@ class IKeypoint(nn.Module):
                         ) * self.stride[
                             i
                         ]  # xy
-                        # x_kpt[..., 0::3] = (x_kpt[..., ::3] + kpt_grid_x.repeat(1,1,1,1,17)) * self.stride[i]  # xy
-                        # x_kpt[..., 1::3] = (x_kpt[..., 1::3] + kpt_grid_y.repeat(1,1,1,1,17)) * self.stride[i]  # xy
-                        # print('=============')
-                        # print(self.anchor_grid[i].shape)
-                        # print(self.anchor_grid[i][...,0].unsqueeze(4).shape)
-                        # print(x_kpt[..., 0::3].shape)
-                        # x_kpt[..., 0::3] = ((x_kpt[..., 0::3].tanh() * 2.) ** 3 * self.anchor_grid[i][...,0].unsqueeze(4).repeat(1,1,1,1,self.nkpt)) + kpt_grid_x.repeat(1,1,1,1,17) * self.stride[i]  # xy
-                        # x_kpt[..., 1::3] = ((x_kpt[..., 1::3].tanh() * 2.) ** 3 * self.anchor_grid[i][...,1].unsqueeze(4).repeat(1,1,1,1,self.nkpt)) + kpt_grid_y.repeat(1,1,1,1,17) * self.stride[i]  # xy
-                        # x_kpt[..., 0::3] = (((x_kpt[..., 0::3].sigmoid() * 4.) ** 2 - 8.) * self.anchor_grid[i][...,0].unsqueeze(4).repeat(1,1,1,1,self.nkpt)) + kpt_grid_x.repeat(1,1,1,1,17) * self.stride[i]  # xy
-                        # x_kpt[..., 1::3] = (((x_kpt[..., 1::3].sigmoid() * 4.) ** 2 - 8.) * self.anchor_grid[i][...,1].unsqueeze(4).repeat(1,1,1,1,self.nkpt)) + kpt_grid_y.repeat(1,1,1,1,17) * self.stride[i]  # xy
                         x_kpt[..., 2::3] = x_kpt[..., 2::3].sigmoid()
 
                     y = torch.cat((xy, wh, y[..., 4:], x_kpt), dim=-1)
@@ -1134,7 +1124,7 @@ if __name__ == "__main__":
     )
     parser.add_argument("--profile", action="store_true", help="profile model speed")
     opt = parser.parse_args()
-    opt.cfg = check_file(opt.cfg) 
+    opt.cfg = check_file(opt.cfg)
     set_logging()
     device = select_device(opt.device)
 

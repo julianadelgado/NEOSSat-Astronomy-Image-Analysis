@@ -110,4 +110,3 @@ def get_token(cookie="./cookie"):
             if "download" in line:
                 return line.split()[-1]
     return ""
-

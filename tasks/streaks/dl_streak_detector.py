@@ -5,12 +5,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-
 sys.path.append(str(Path(__file__).parent / "dl_streak_detect"))
 from cli.config import load_config
-from tasks.streaks.dl_streak_detect.detect import detect
 from preprocessing.preprocessors.fits_to_png import FitsToPng
 from services.satellite_db_service import SatelliteDatabaseService
+from tasks.streaks.dl_streak_detect.detect import detect
 
 from .IDetector import IDetector
 

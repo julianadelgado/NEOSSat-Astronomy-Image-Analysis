@@ -3,13 +3,13 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 
-from tasks.streaks import dl_streak_detector
 from api.preprocess_request import PreprocessRequest
 from preprocessing.metrics import Metrics
 from preprocessing.pipeline import Pipeline
 from preprocessing.preprocessors.fits_to_png import FitsToPng
 from tasks.stars.star_detection import StarDetection
 from tasks.stars.star_detection_legacy import StarDetectionLegacy
+from tasks.streaks import dl_streak_detector
 
 app = FastAPI()
 
