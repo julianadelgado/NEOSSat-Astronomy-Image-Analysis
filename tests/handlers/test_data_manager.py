@@ -1,4 +1,4 @@
-from acquisition.data_manager import DataManager
+from handlers.data_manager import DataManager
 
 
 def test_load_fits_image_valid(sample_fits_image):

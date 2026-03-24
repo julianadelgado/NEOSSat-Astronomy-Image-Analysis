@@ -34,7 +34,7 @@ stack:
 	uv run --extra cli neossat-cli --image-stacking
 
 all:
-	uv run --extra cli neossat-cli --stars --streaks
+	uv run --extra cli neossat-cli --image-stacking --stars --streaks
 
 test:
 	uv run pytest

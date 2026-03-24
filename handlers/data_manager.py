@@ -56,6 +56,7 @@ class DataManager:
             print(f"Error retrieving images by date: {e}")
             return {}
 
+    # TODO Combine this function in preprocessing/FitsToPng.py
     def fits_to_png(self, output_path):
         PERCENTILE_LOWER_BOUND = 15
         PERCENTILE_UPPER_BOUND = 99.5

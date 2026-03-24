@@ -160,18 +160,6 @@ def kmean_anchors(
     wh0 = torch.tensor(wh0, dtype=torch.float32)  # unfiltered
     k = print_results(k)
 
-    # Plot
-    # k, d = [None] * 20, [None] * 20
-    # for i in tqdm(range(1, 21)):
-    #     k[i-1], d[i-1] = kmeans(wh / s, i)  # points, mean distance
-    # fig, ax = plt.subplots(1, 2, figsize=(14, 7), tight_layout=True)
-    # ax = ax.ravel()
-    # ax[0].plot(np.arange(1, 21), np.array(d) ** 2, marker='.')
-    # fig, ax = plt.subplots(1, 2, figsize=(14, 7))  # plot wh
-    # ax[0].hist(wh[wh[:, 0]<100, 0],400)
-    # ax[1].hist(wh[wh[:, 1]<100, 1],400)
-    # fig.savefig('wh.png', dpi=200)
-
     # Evolve
     npr = np.random
     f, sh, mp, s = (

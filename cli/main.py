@@ -5,12 +5,12 @@ from pathlib import Path
 import typer
 from astropy.io import fits
 
-from acquisition.data_manager import DataManager
-from acquisition.fits_handler import FitsHandler
-from acquisition.image_stacking import ImageStacking
 from cli.validator import validate_data_directory, validate_email
-from detectors.dl_streak_detector import DLStreakDetector
-from preprocessing.preprocessors.star_detection import StarDetection
+from handlers.data_manager import DataManager
+from handlers.fits_handler import FitsHandler
+from tasks.stacking.image_stacking import ImageStacking
+from tasks.stars.star_detection import StarDetection
+from tasks.streaks.dl_streak_detector import DLStreakDetector
 
 from .config import load_config
 
@@ -77,12 +77,12 @@ def main(
     run_image_stacking = image_stacking or run_all
     run_streaks = streaks or run_all
 
-    # TODO verify order of call operations
-    if run_image_stacking:
-        print("Running image stacking...")
-        # TODO Should ImageStacking be a preprocessor?
-        for filename in os.listdir(cfg.data_dir):
-            if filename.endswith(".fits"):
+    for filename in os.listdir(cfg.data_dir):
+        if filename.endswith(".fits"):
+            # TODO verify order of call operations
+            if run_image_stacking:
+                print("Running image stacking...")
+                # TODO Should ImageStacking be a preprocessor?
                 file_path = os.path.join(cfg.data_dir, filename)
                 print(f"\nProcessing: {filename}")
 
@@ -107,11 +107,9 @@ def main(
                     shutil.rmtree(clean_name)
                 data_manager.fits_image.close()
 
-    if run_stars:
-        print("Running star detection...")
-        detector = StarDetection()
-        for filename in os.listdir(cfg.data_dir):
-            if filename.endswith(".fits"):
+            if run_stars:
+                print("Running star detection...")
+                detector = StarDetection()
                 fits_path = Path(cfg.data_dir) / filename
                 output_dir = Path(cfg.results_dir) / filename.replace(".fits", "")
                 output_dir.mkdir(parents=True, exist_ok=True)
@@ -121,10 +119,10 @@ def main(
                 results = detector.run(image, header, output_dir)
                 print(f"{filename}: {results}")
 
-    if run_streaks:
-        print("Running streak detection...")
-        detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
-        results = detector.run()
+            if run_streaks:
+                print("Running streak detection...")
+                detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
+                results = detector.run()
 
 
 if __name__ == "__main__":

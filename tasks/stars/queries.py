@@ -5,7 +5,7 @@ import astropy.units as units
 from astropy.coordinates import SkyCoord
 from astroquery.simbad import Simbad
 
-import preprocessing.core.identifiedObject as identifiedObject
+import tasks.stars.identified_object as identified_object
 
 
 def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
@@ -30,7 +30,7 @@ def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
         distance = separations[idx].arcsec
         otype = best_match["otype"] if "otype" in result.colnames else "Unknown"
 
-        obj = identifiedObject.IdentifiedObject(
+        obj = identified_object.IdentifiedObject(
             object_id=best_match["main_id"],
             ra_deg=best_match["ra"],
             dec_deg=best_match["dec"],
@@ -81,7 +81,7 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
         for i in range(len(result)):
             otype = result["otype"][i] if "otype" in result.colnames else "Unknown"
             objects.append(
-                identifiedObject.IdentifiedObjectSkyCoord(
+                identified_object.IdentifiedObjectSkyCoord(
                     object_id=result["main_id"][i], coord=obj_coords[i], otype=otype
                 )
             )
