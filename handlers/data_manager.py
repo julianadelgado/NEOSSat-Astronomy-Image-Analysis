@@ -18,6 +18,22 @@ class DataManager:
         except Exception as e:
             print(f"Error loading FITS image: {e}")
             return None
+    
+    def is_fits_correct_mode(self):
+        if self.fits_image is None:
+            return False
+        try:
+            header = self.fits_image[0].header
+            mode = header.get("MODE")
+            if mode == "16 - FINE_POINT" or mode == "14 - FINE_SLEW":
+                print("FITS image is in the correct mode for analysis.")
+                return True
+            else:
+                print(f"FITS image is in mode '{mode}', which may not be suitable for analysis.")
+                return False
+        except Exception as e:
+            print(f"Error checking FITS image mode: {e}")
+            return False
 
     def get_coordinates(self):
         if self.fits_image is None:

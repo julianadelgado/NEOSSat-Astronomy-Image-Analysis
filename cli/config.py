@@ -10,6 +10,7 @@ class Config:
     data_dir: str = "./data"
     results_dir: str = "./results"
     reports_dir: str = "./reports"
+    wrong_mode_dir: str = "./wrong_mode"
 
 
 def load_config(path: str | None) -> Config:
