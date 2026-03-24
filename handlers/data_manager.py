@@ -23,9 +23,10 @@ class DataManager:
         if self.fits_image is None:
             return False
         try:
+            allowed_modes = ["16 - FINE_POINT", "14 - FINE_SLEW"]
             header = self.fits_image[0].header
             mode = header.get("MODE")
-            if mode == "16 - FINE_POINT" or mode == "14 - FINE_SLEW":
+            if mode in allowed_modes:
                 print("FITS image is in the correct mode for analysis.")
                 return True
             else:
