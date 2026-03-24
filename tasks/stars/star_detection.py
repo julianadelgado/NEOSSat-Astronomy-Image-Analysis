@@ -65,12 +65,12 @@ class StarDetection(IPreprocessor):
             image=image, wcs=wcs, region_catalog=region_catalog, output_dir=output_dir
         )
 
-        detected_candidates = self._detect_sources(image, wcs)
+        detected_candidates = self._detect_sources(image, header, wcs)
 
         if len(detected_candidates) == 0:
             return {"stars_detected": 0}
 
-        matched_candidates = self._match_candidates(detected_candidates, region_catalog)
+        matched_candidates = self._match_candidates(detected_candidates, region_catalog, header)
 
         self._export_results(matched_candidates, output_dir)
 
@@ -112,15 +112,29 @@ class StarDetection(IPreprocessor):
 
         return center, radius
 
-    def _detect_sources(self, image: np.ndarray, wcs: WCS):
+    def _detect_sources(self, image: np.ndarray, header, wcs: WCS):
         """Run source detection on the image using DAOStarFinder"""
 
         print("Running source detection...")
 
-        mean, median, std = sigma_clipped_stats(image, sigma=SIGMA)
+        try:
+            gain = float(header.get("GAIN", 1.0))
+        except (ValueError, TypeError):
+            gain = 1.0
+
+        try:
+            read_noise = float(header.get("RDNOISE", 8.0))
+        except (ValueError, TypeError):
+            read_noise = 8.0
+
+        effective_std = max(read_noise / gain, np.std(image))
+
+        print(f"Using GAIN={gain}, READ_NOISE={read_noise}, EFFECTIVE_STD={effective_std} (IMAGE_STD={np.std(image)}).")
+
+        mean, median, std = sigma_clipped_stats(image, sigma=SIGMA, maxiters=5)
 
         daofind = DAOStarFinder(
-            fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std
+            fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * effective_std
         )
 
         sources = daofind(image - median)
@@ -128,6 +142,7 @@ class StarDetection(IPreprocessor):
         print(f"Found {len(sources)} potential star candidates.")
 
         if sources is None or len(sources) == 0:
+            print("No sources detected.")
             return []
 
         x_coord = sources["xcentroid"]
@@ -136,18 +151,17 @@ class StarDetection(IPreprocessor):
 
         world_coords = wcs.pixel_to_world(x_coord, y_coord)
 
-        detected_candidates = []
-
-        for i in range(len(sources)):
-
-            detected_candidates.append(
-                {
-                    "x": float(x_coord[i]),
-                    "y": float(y_coord[i]),
-                    "coord": world_coords[i],
-                    "flux": float(flux[i]),
-                }
-            )
+        min_flux = 5 * effective_std
+        detected_candidates = [
+            {
+                "x": float(x_coord[i]),
+                "y": float(y_coord[i]),
+                "coord": world_coords[i],
+                "flux": float(flux[i]),
+            }
+            for i in range(len(sources))
+            if flux[i] > min_flux
+        ]
 
         print(
             f"Detected {len(detected_candidates)} star candidates after DAOStarFinder."
@@ -155,66 +169,35 @@ class StarDetection(IPreprocessor):
 
         return detected_candidates
 
-    def _match_candidates(self, detected_candidates, region_catalog):
-        """Match detected candidates with SIMBAD catalog objects"""
+    def _match_candidates(self, detected_candidates, region_catalog, header):
+        matched = []
 
-        print("Matching detected candidates with catalog objects...")
+        filter_band = header.get("FILTER", None)
 
-        if len(detected_candidates) == 0:
-            return []
+        for candidate in detected_candidates:
+            best_match = None
+            min_sep = MATCH_THRESHOLD
 
-        if len(region_catalog) == 0:
-            matched = []
-            for src in detected_candidates:
-                matched.append(
-                    {
-                        **src,
-                        "object_id": CANDIDATE_NOT_FOUND_STRING,
-                        "otype": "Default",
-                        "deviation_arcsec": None,
-                    }
-                )
-            return matched
+            for entry in region_catalog:
+                sep = candidate["coord"].separation(entry["coord"])
 
-        detected_coords = SkyCoord([src["coord"] for src in detected_candidates])
-        catalog_coords = SkyCoord([obj.coord for obj in region_catalog])
+                flux_match = 1.0
+                if filter_band and "magnitude_" + filter_band.lower() in entry:
+                    flux_diff = abs(candidate["flux"] - entry["magnitude_" + filter_band.lower()])
+                    flux_match = 1.0 / (1.0 + flux_diff)
 
-        idx, sep2d, _ = detected_coords.match_to_catalog_sky(catalog_coords)
+                weighted_sep = sep / flux_match
 
-        matched_candidates = []
+                if weighted_sep < min_sep:
+                    min_sep = weighted_sep
+                    best_match = entry
 
-        for i, src in enumerate(detected_candidates):
-            separation = sep2d[i]
-            if separation < MATCH_THRESHOLD:
-                matched_candidates.append(
-                    {
-                        **src,
-                        "object_id": region_catalog[idx[i]].object_id,
-                        "otype": getattr(region_catalog[idx[i]], "otype", "Default"),
-                        "deviation_arcsec": separation.arcsec,
-                    }
-                )
+            if best_match:
+                matched.append({**candidate, "matched_entry": best_match})
             else:
-                matched_candidates.append(
-                    {
-                        **src,
-                        "object_id": CANDIDATE_NOT_FOUND_STRING,
-                        "otype": "Default",
-                        "deviation_arcsec": separation.arcsec,
-                    }
-                )
+                matched.append({**candidate, "matched_entry": CANDIDATE_NOT_FOUND_STRING})
 
-        identified_candidates = [
-            c
-            for c in matched_candidates
-            if c["object_id"] != CANDIDATE_NOT_FOUND_STRING
-        ]
-
-        matched_count = len(identified_candidates)
-
-        print(f"Matched {matched_count} candidates with catalog objects.")
-
-        return matched_candidates
+        return matched
 
     def _export_results(self, matched_candidates, output_dir: Path):
         """Export matched candidates to a CSV file"""
