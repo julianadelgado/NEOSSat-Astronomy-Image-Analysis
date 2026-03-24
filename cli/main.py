@@ -128,14 +128,17 @@ def main(
 
                 if run_streaks:
                     print("Running streak detection...")
-                    detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
+                    detector = DLStreakDetector(
+                        data_dir=cfg.data_dir, clean_results=True
+                    )
                     results = detector.run()
             else:
-                print(f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}")
+                print(
+                    f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}"
+                )
                 data_manager.fits_image.close()
                 os.makedirs(cfg.wrong_mode_dir, exist_ok=True)
                 shutil.move(file_path, os.path.join(cfg.wrong_mode_dir, filename))
-
 
 
 if __name__ == "__main__":

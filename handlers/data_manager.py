@@ -18,7 +18,7 @@ class DataManager:
         except Exception as e:
             print(f"Error loading FITS image: {e}")
             return None
-    
+
     def is_fits_correct_mode(self):
         if self.fits_image is None:
             return False
@@ -30,7 +30,9 @@ class DataManager:
                 print("FITS image is in the correct mode for analysis.")
                 return True
             else:
-                print(f"FITS image is in mode '{mode}', which may not be suitable for analysis.")
+                print(
+                    f"FITS image is in mode '{mode}', which may not be suitable for analysis."
+                )
                 return False
         except Exception as e:
             print(f"Error checking FITS image mode: {e}")
