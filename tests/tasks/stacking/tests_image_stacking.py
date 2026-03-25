@@ -2,6 +2,7 @@ import os
 from unittest.mock import patch
 
 import numpy as np
+
 from tasks.stacking.image_stacking import ImageStacking
 
 
