@@ -1,6 +1,6 @@
 # from conftest import make_fake_satellite
 import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from services.satellite_db_service import SatelliteDatabaseService
 
