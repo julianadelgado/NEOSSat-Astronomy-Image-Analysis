@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from services.email_service import EmailService
 
 
@@ -10,9 +12,11 @@ def email_service(monkeypatch):
     monkeypatch.setenv("SMTP_PASSWORD", "password")
     return EmailService()
 
+
 @pytest.fixture
 def make_fake_satellite():
     """Factory fixture that builds a mock satellite like a skyfield EarthSatellite."""
+
     def _factory(name, catalog_id, ra_deg, dec_deg, distance_km):
         radec_result = (
             MagicMock(degrees=ra_deg),
