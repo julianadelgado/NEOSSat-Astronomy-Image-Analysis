@@ -5,26 +5,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 sys.path.append(str(Path(__file__).parent / "dl_streak_detect"))
 from cli.config import load_config
 from preprocessing.preprocessors.fits_to_png import FitsToPng
 from services.satellite_db_service import SatelliteDatabaseService
 from tasks.streaks.dl_streak_detect.detect import detect
-=======
-
-=======
->>>>>>> d4bb06c (Changed: ran uv check and pyproject python versions)
-sys.path.append(str(Path(__file__).parent / "dl_streak_detect"))
-from cli.config import load_config
-from preprocessing.preprocessors.fits_to_png import FitsToPng
-from services.satellite_db_service import SatelliteDatabaseService
-<<<<<<< HEAD
->>>>>>> c303b9a (Changed: project struct)
-=======
-from tasks.streaks.dl_streak_detect.detect import detect
->>>>>>> d4bb06c (Changed: ran uv check and pyproject python versions)
 
 from .IDetector import IDetector
 

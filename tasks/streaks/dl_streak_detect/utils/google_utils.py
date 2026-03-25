@@ -110,10 +110,3 @@ def get_token(cookie="./cookie"):
             if "download" in line:
                 return line.split()[-1]
     return ""
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> c303b9a (Changed: project struct)
-=======
->>>>>>> d4bb06c (Changed: ran uv check and pyproject python versions)

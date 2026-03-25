@@ -56,15 +56,7 @@ class DataManager:
             print(f"Error retrieving images by date: {e}")
             return {}
 
-<<<<<<< HEAD
-<<<<<<< HEAD:handlers/data_manager.py
     # TODO Combine this function in preprocessing/FitsToPng.py
-=======
-    #TODO Combine this function in preprocessing/FitsToPng.py
->>>>>>> c303b9a (Changed: project struct):acquisition/data_manager.py
-=======
-    # TODO Combine this function in preprocessing/FitsToPng.py
->>>>>>> d4bb06c (Changed: ran uv check and pyproject python versions)
     def fits_to_png(self, output_path):
         PERCENTILE_LOWER_BOUND = 15
         PERCENTILE_UPPER_BOUND = 99.5
