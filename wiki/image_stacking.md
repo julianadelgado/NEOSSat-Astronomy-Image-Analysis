@@ -1,6 +1,6 @@
 # Image Stacking
 
-[Back to README](/README.md)
+[Back to wiki](./sidebar.md)
 
 ## Overview 
 Image stacking combines multiple NEOSSat images of the same sky region into a single image. 

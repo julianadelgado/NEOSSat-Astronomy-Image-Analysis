@@ -1,6 +1,6 @@
 # Streak Detection
 
-[Back to README](/README.md)
+[Back to wiki](./sidebar.md)
 
 ## Overview 
 The detector uses a YOLO-based deep learning model trained to detect satellite streaks in NEOSSat images.
