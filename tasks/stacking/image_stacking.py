@@ -44,11 +44,27 @@ class ImageStacking:
             print(f"Error opening FITS file {img_name}: {e}")
         return reference_data, data_arrays
 
+    def get_images_correct_mode(self):
+        allowed_modes = ["16 - FINE_POINT", "14 - FINE_SLEW"]
+        all_images = [f for f in os.listdir(self.images_path) if f.endswith(".fits")]
+        correct_mode_images = []
+        for img_name in all_images:
+            img_path = os.path.join(self.images_path, img_name)
+            try:
+                with fits.open(img_path) as img_fits:
+                    header = img_fits[0].header
+                    mode = header.get("MODE")
+                    if mode in allowed_modes:
+                        correct_mode_images.append(img_name)
+            except Exception as e:
+                print(f"Error checking mode for image {img_name}: {e}")
+        return correct_mode_images
+
     def stack_images(self):
         PERCENTILE_LOWER_BOUND = 40
         PERCENTILE_UPPER_BOUND = 99.9
         original_image_path = self.data_manager.file_path
-        all_images = [f for f in os.listdir(self.images_path) if f.endswith(".fits")]
+        all_images = self.get_images_correct_mode()
 
         data_arrays = []
         reference_data = None

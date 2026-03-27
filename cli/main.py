@@ -50,6 +50,12 @@ def main(
         "-R",
         help="Path to directory to save reports (default: ./reports)",
     ),
+    wrong_mode_dir: str = typer.Option(
+        None,
+        "--wrong-mode-dir",
+        "-w",
+        help="Path to directory to save FITS files in wrong mode (default: ./wrong_mode)",
+    ),
 ):
     print("Welcome to the NEOSSat Astronomy Image Analysis!")
     cfg = load_config(None)
@@ -70,6 +76,8 @@ def main(
         cfg.results_dir = results_dir
     if reports_dir:
         cfg.reports_dir = reports_dir
+    if wrong_mode_dir:
+        cfg.wrong_mode_dir = wrong_mode_dir
 
     # If neither flag is set, run everything
     run_all = not (stars or image_stacking or streaks)
@@ -79,50 +87,58 @@ def main(
 
     for filename in os.listdir(cfg.data_dir):
         if filename.endswith(".fits"):
-            # TODO verify order of call operations
-            if run_image_stacking:
-                print("Running image stacking...")
-                # TODO Should ImageStacking be a preprocessor?
-                file_path = os.path.join(cfg.data_dir, filename)
-                print(f"\nProcessing: {filename}")
+            file_path = os.path.join(cfg.data_dir, filename)
+            data_manager = DataManager(file_path)
+            if data_manager.is_fits_correct_mode():
+                # TODO verify order of call operations
+                if run_image_stacking:
+                    print("Running image stacking...")
+                    # TODO Should ImageStacking be a preprocessor?
+                    sky_coord = data_manager.get_coordinates()
+                    date_obs = data_manager.get_images_same_date()
 
-                data_manager = DataManager(file_path)
-                sky_coord = data_manager.get_coordinates()
-                date_obs = data_manager.get_images_same_date()
+                    if sky_coord and date_obs:
+                        print(f"Coordinates Found: {sky_coord.to_string('hmsdms')}")
+                        print(f"Observation Date: {date_obs}")
 
-                if sky_coord and date_obs:
-                    print(f"Coordinates Found: {sky_coord.to_string('hmsdms')}")
-                    print(f"Observation Date: {date_obs}")
+                        clean_name = filename.replace(".fits", "")
+                        os.makedirs(clean_name, exist_ok=True)
 
-                    clean_name = filename.replace(".fits", "")
-                    os.makedirs(clean_name, exist_ok=True)
+                        downloader = FitsHandler(sky_coord, date_obs)
+                        downloader.download_images_to_directory(clean_name)
+                        preprocessor = ImageStacking(
+                            clean_name, data_manager, date_obs, cfg.results_dir
+                        )
+                        preprocessor.stack_images()
+                        print(f"Cleaning up temporary folder: {clean_name} ")
+                        shutil.rmtree(clean_name)
+                    data_manager.fits_image.close()
 
-                    downloader = FitsHandler(sky_coord, date_obs)
-                    downloader.download_images_to_directory(clean_name)
-                    preprocessor = ImageStacking(
-                        clean_name, data_manager, date_obs, cfg.results_dir
+                if run_stars:
+                    print("Running star detection...")
+                    detector = StarDetection()
+                    fits_path = Path(cfg.data_dir) / filename
+                    output_dir = Path(cfg.results_dir) / filename.replace(".fits", "")
+                    output_dir.mkdir(parents=True, exist_ok=True)
+
+                    image = fits.getdata(fits_path)
+                    header = fits.getheader(fits_path)
+                    results = detector.run(image, header, output_dir)
+                    print(f"{filename}: {results}")
+
+                if run_streaks:
+                    print("Running streak detection...")
+                    detector = DLStreakDetector(
+                        data_dir=cfg.data_dir, clean_results=True
                     )
-                    preprocessor.stack_images()
-                    print(f"Cleaning up temporary folder: {clean_name} ")
-                    shutil.rmtree(clean_name)
+                    results = detector.run()
+            else:
+                print(
+                    f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}"
+                )
                 data_manager.fits_image.close()
-
-            if run_stars:
-                print("Running star detection...")
-                detector = StarDetection()
-                fits_path = Path(cfg.data_dir) / filename
-                output_dir = Path(cfg.results_dir) / filename.replace(".fits", "")
-                output_dir.mkdir(parents=True, exist_ok=True)
-
-                image = fits.getdata(fits_path)
-                header = fits.getheader(fits_path)
-                results = detector.run(image, header, output_dir)
-                print(f"{filename}: {results}")
-
-            if run_streaks:
-                print("Running streak detection...")
-                detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
-                results = detector.run()
+                os.makedirs(cfg.wrong_mode_dir, exist_ok=True)
+                shutil.move(file_path, os.path.join(cfg.wrong_mode_dir, filename))
 
 
 if __name__ == "__main__":
