@@ -60,17 +60,28 @@ def main(
     print("Welcome to the NEOSSat Astronomy Image Analysis!")
     cfg = load_config(None)
 
+    # Check raw config to see if keys were explicitly provided
+    config_keys = {}
+    default_config = Path("config.yaml")
+    if default_config.exists():
+        import yaml
+
+        with open(default_config) as f:
+            config_keys = yaml.safe_load(f) or {}
+
     if data_dir:
         cfg.data_dir = data_dir
-    else:
+    elif "data_dir" not in config_keys:
         cfg.data_dir = typer.prompt(
             "Enter the path to the data directory", default=cfg.data_dir
         )
+
     if email:
         cfg.email = email
-    else:
+    elif "email" not in config_keys:
         cfg.email = typer.prompt(
-            "Enter a valid email address to receive results", default=cfg.email
+            "Enter a valid email address to receive results",
+            default=cfg.email if cfg.email else None,
         )
     if results_dir:
         cfg.results_dir = results_dir
@@ -89,7 +100,7 @@ def main(
         if filename.endswith(".fits"):
             file_path = os.path.join(cfg.data_dir, filename)
             data_manager = DataManager(file_path)
-            if data_manager.is_fits_correct_mode():
+            if True or data_manager.is_fits_correct_mode():
                 # TODO verify order of call operations
                 if run_image_stacking:
                     print("Running image stacking...")
@@ -114,31 +125,30 @@ def main(
                         shutil.rmtree(clean_name)
                     data_manager.fits_image.close()
 
-                if run_stars:
-                    print("Running star detection...")
-                    detector = StarDetection()
-                    fits_path = Path(cfg.data_dir) / filename
-                    output_dir = Path(cfg.results_dir) / filename.replace(".fits", "")
-                    output_dir.mkdir(parents=True, exist_ok=True)
+            if run_stars:
+                print("Running star detection...")
+                detector = StarDetection()
+                fits_path = Path(cfg.data_dir) / filename
+                output_dir = Path(cfg.results_dir) / filename.replace(".fits", "")
+                output_dir.mkdir(parents=True, exist_ok=True)
 
-                    image = fits.getdata(fits_path)
-                    header = fits.getheader(fits_path)
-                    results = detector.run(image, header, output_dir)
-                    print(f"{filename}: {results}")
+                image = fits.getdata(fits_path)
+                header = fits.getheader(fits_path)
+                results = detector.run(image, header, output_dir)
+                print(f"{filename}: {results}")
 
-                if run_streaks:
-                    print("Running streak detection...")
-                    detector = DLStreakDetector(
-                        data_dir=cfg.data_dir, clean_results=True
-                    )
-                    results = detector.run()
-            else:
-                print(
-                    f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}"
-                )
-                data_manager.fits_image.close()
-                os.makedirs(cfg.wrong_mode_dir, exist_ok=True)
-                shutil.move(file_path, os.path.join(cfg.wrong_mode_dir, filename))
+        else:
+            print(f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}")
+            data_manager.fits_image.close()
+            os.makedirs(cfg.wrong_mode_dir, exist_ok=True)
+            shutil.move(file_path, os.path.join(cfg.wrong_mode_dir, filename))
+            return
+
+    # Run streak detection on the whole directory once
+    if run_streaks:
+        print("Running streak detection on directory...")
+        detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
+        results = detector.run()
 
 
 if __name__ == "__main__":

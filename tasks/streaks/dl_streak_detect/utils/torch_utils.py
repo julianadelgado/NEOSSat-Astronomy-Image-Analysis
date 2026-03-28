@@ -169,8 +169,6 @@ def is_parallel(model):
     )
 
 
-
-
 def initialize_weights(model):
     for m in model.modules():
         t = type(m)
@@ -181,8 +179,6 @@ def initialize_weights(model):
             m.momentum = 0.03
         elif t in [nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6]:
             m.inplace = True
-
-
 
 
 def sparsity(model):
@@ -333,8 +329,6 @@ def copy_attr(a, b, include=(), exclude=()):
             continue
         else:
             setattr(a, k, v)
-
-
 
 
 class BatchNormXd(torch.nn.modules.batchnorm._BatchNorm):

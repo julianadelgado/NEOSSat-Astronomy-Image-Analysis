@@ -285,8 +285,6 @@ class ONNX_TRT(nn.Module):
         return num_det, det_boxes, det_scores, det_classes
 
 
-
-
 def attempt_load(weights, map_location=None):
     # Loads an ensemble of models weights=[a,b,c] or a single model weights=[a] or weights=a
     model = Ensemble()

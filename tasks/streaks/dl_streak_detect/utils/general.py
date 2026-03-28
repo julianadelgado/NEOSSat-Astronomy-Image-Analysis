@@ -5,7 +5,6 @@ import logging
 import math
 import os
 import platform
-import random
 import re
 import subprocess
 import time
@@ -16,7 +15,6 @@ import numpy as np
 import pandas as pd
 import torch
 import torchvision
-import yaml
 
 from .google_utils import gsutil_getsize
 from .torch_utils import init_torch_seeds
@@ -37,10 +35,6 @@ def set_logging(rank=-1):
     logging.basicConfig(
         format="%(message)s", level=logging.INFO if rank in [-1, 0] else logging.WARN
     )
-
-
-
-
 
 
 def isdocker():
@@ -66,8 +60,6 @@ def check_online():
         return True
     except OSError:
         return False
-
-
 
 
 def check_requirements(requirements="requirements.txt", exclude=()):
@@ -152,8 +144,6 @@ def check_file(file):
         return files[0]  # return file
 
 
-
-
 def make_divisible(x, divisor):
     # Returns x evenly divisible by divisor
     return math.ceil(x / divisor) * divisor
@@ -162,8 +152,6 @@ def make_divisible(x, divisor):
 def clean_str(s):
     # Cleans a string by replacing special characters with underscore _
     return re.sub(pattern="[|@#!¡·$€%&()=?¿^*;:,¨´><+]", repl="_", string=s)
-
-
 
 
 def colorstr(*input):
@@ -193,12 +181,6 @@ def colorstr(*input):
         "underline": "\033[4m",
     }
     return "".join(colors[x] for x in args) + f"{string}" + colors["end"]
-
-
-
-
-
-
 
 
 def xyxy2xywh(x):
@@ -361,8 +343,6 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
         return iou  # IoU
 
 
-
-
 def box_iou(box1, box2):
     # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
     """
@@ -395,14 +375,6 @@ def box_iou(box1, box2):
     return inter / (
         area1[:, None] + area2 - inter
     )  # iou = inter / (area1 + area2 - inter)
-
-
-
-
-
-
-
-
 
 
 def non_max_suppression(
@@ -509,12 +481,6 @@ def non_max_suppression(
             break  # time limit exceeded
 
     return output
-
-
-
-
-
-
 
 
 def apply_classifier(x, model, img, im0):

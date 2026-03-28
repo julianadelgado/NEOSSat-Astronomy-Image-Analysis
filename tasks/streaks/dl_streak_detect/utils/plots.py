@@ -1,24 +1,11 @@
 # Plotting utils
 
-import glob
-import math
-import os
 import random
 from copy import copy
-from pathlib import Path
 
 import cv2
 import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
-import torch
-import yaml
-from PIL import Image, ImageDraw, ImageFont
-from scipy.signal import butter, filtfilt
-
-from .general import xywh2xyxy, xyxy2xywh
 
 # Settings
 matplotlib.rc("font", **{"size": 11})
@@ -44,8 +31,6 @@ def hist2d(x, y, n=100):
     return np.log(hist[xidx, yidx])
 
 
-
-
 def plot_one_box(x, img, color=None, label=None, line_thickness=3):
     # Plots one bounding box on image img
     tl = (
@@ -69,33 +54,3 @@ def plot_one_box(x, img, color=None, label=None, line_thickness=3):
             thickness=tf,
             lineType=cv2.LINE_AA,
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -86,8 +86,6 @@ def exif_size(img):
     return s
 
 
-
-
 class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
     """Dataloader that reuses workers
 
@@ -205,8 +203,6 @@ class LoadImages:  # for inference
 
     def __len__(self):
         return self.nf  # number of files
-
-
 
 
 class LoadStreams:  # multiple IP or RTSP cameras
@@ -766,8 +762,6 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
     cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR, dst=img)  # no return needed
 
 
-
-
 def load_mosaic(self, index):
     # loads images in a 4-mosaic
 
@@ -1036,8 +1030,6 @@ def copy_paste(img, labels, segments, probability=0.5):
     return img, labels, segments
 
 
-
-
 def sample_segments(img, labels, segments, probability=0.5):
     # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels as nx5 np.array(cls, xyxy)
     n = len(segments)
@@ -1075,8 +1067,6 @@ def sample_segments(img, labels, segments, probability=0.5):
             sample_images.append(mask[box[1] : box[3], box[0] : box[2], :])
 
     return sample_labels, sample_images, sample_masks
-
-
 
 
 def letterbox(
@@ -1374,18 +1364,8 @@ def pastein(image, labels, sample_labels, sample_images, sample_masks):
     return labels
 
 
-
-
 def create_folder(path="./new"):
     # Create folder
     if os.path.exists(path):
         shutil.rmtree(path)  # delete output folder
     os.makedirs(path)  # make new output folder
-
-
-
-
-
-
-
-

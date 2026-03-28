@@ -145,7 +145,7 @@ class DLStreakDetector:
         data_dir: str = None,
         clean_results: bool = False,
     ):
-        base_path = Path(__file__).parent.parent / "dl_streak_detect"
+        base_path = Path(__file__).parent / "dl_streak_detect"
         self.weights_path = weights_path or str(base_path / "weights/best.pt")
         self.img_size = img_size
         self.conf_thres = conf_thres
@@ -392,6 +392,11 @@ class DLStreakDetector:
         )
 
         try:
+            # Clean up old labels to prevent appending from previous runs
+            out_dir = Path(opt.project) / opt.name
+            if out_dir.exists():
+                shutil.rmtree(out_dir, ignore_errors=True)
+
             detect(opt=opt)
 
             # Parse results from the text files generated
@@ -458,11 +463,6 @@ class DLStreakDetector:
         finally:
             if INFERENCE_DATA_DIR.exists():
                 shutil.rmtree(INFERENCE_DATA_DIR, ignore_errors=True)
-
-            # Clean up skyfield downloaded TLE files
-            gp_php_path = Path("gp.php")
-            if gp_php_path.exists():
-                gp_php_path.unlink()
 
         self._generate_markdown_report(results_summary, Path(opt.project) / opt.name)
 

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import yaml
 
@@ -12,8 +13,6 @@ class Config:
     reports_dir: str = "./reports"
     wrong_mode_dir: str = "./wrong_mode"
 
-
-from typing import Optional
 
 def load_config(path: Optional[str]) -> Config:
     if path is None:

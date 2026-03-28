@@ -661,7 +661,6 @@ class RepConv(nn.Module):
         t = (gamma / std).reshape(-1, 1, 1, 1)
         return kernel * t, beta - running_mean * gamma / std
 
-
     def fuse_conv_bn(self, conv, bn):
 
         std = (bn.running_var + bn.eps).sqrt()
@@ -914,8 +913,6 @@ class TransformerLayer(nn.Module):
         return x
 
 
-
-
 ##### end of transformer #####
 
 
@@ -1016,7 +1013,6 @@ class autoShape(nn.Module):
     def __init__(self, model):
         super(autoShape, self).__init__()
         self.model = model.eval()
-
 
     @torch.no_grad()
     def forward(self, imgs, size=640, augment=False, profile=False):
@@ -2301,7 +2297,6 @@ class WindowAttention_v2(nn.Module):
         x = self.proj_drop(x)
         return x
 
-
     def flops(self, N):
         # calculate flops for 1 window with token length of N
         flops = 0
@@ -2518,7 +2513,6 @@ class SwinTransformerLayer_v2(nn.Module):
             x = x[:, :, :H_, :W_]  # reverse padding
 
         return x
-
 
     def flops(self):
         flops = 0

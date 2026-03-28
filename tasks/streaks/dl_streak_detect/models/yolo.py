@@ -892,7 +892,6 @@ class Model(nn.Module):
             )  # cls
             mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
 
-
     def fuse(self):  # fuse model Conv2d() + BatchNorm2d() layers
         print("Fusing layers... ")
         for m in self.model.modules():
@@ -925,7 +924,6 @@ class Model(nn.Module):
             print("Removing NMS... ")
             self.model = self.model[:-1]  # remove
         return self
-
 
     def info(self, verbose=False, img_size=640):  # print model information
         model_info(self, verbose, img_size)

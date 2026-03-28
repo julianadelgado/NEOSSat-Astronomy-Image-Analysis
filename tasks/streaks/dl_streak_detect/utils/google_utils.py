@@ -64,8 +64,6 @@ def attempt_download(file, repo="WongKinYiu/yolov7"):
                 return
 
 
-
-
 def get_token(cookie="./cookie"):
     with open(cookie) as f:
         for line in f:

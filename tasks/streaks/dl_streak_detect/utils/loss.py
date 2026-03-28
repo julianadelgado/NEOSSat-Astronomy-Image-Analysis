@@ -207,12 +207,6 @@ class QFocalLoss(nn.Module):
             return loss
 
 
-
-
-
-
-
-
 class ComputeLoss:
     # Compute losses
     def __init__(self, model, autobalance=False):

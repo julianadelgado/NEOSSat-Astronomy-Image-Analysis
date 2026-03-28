@@ -20,8 +20,6 @@ def check_anchor_order(m):
         m.anchor_grid[:] = m.anchor_grid.flip(0)
 
 
-
-
 def kmean_anchors(
     path="./data/coco.yaml", n=9, img_size=640, thr=4.0, gen=1000, verbose=True
 ):
