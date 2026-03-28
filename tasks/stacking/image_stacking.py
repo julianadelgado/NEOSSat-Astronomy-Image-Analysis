@@ -1,17 +1,26 @@
 import os
+from pathlib import Path
 
 import astroalign as aa
 import numpy as np
 from astropy.io import fits
 from PIL import Image
 
+from cli.config import load_config
+from services.report_service import ReportData, ReportSection, ReportService
+
+config = load_config(None)
+
+REPORTS_DIR = Path(config.reports_dir)
+RESULTS_DIR = Path(config.results_dir)
+
 
 class ImageStacking:
-    def __init__(self, images_path, data_manager, date_obs, results_dir):
+    def __init__(self, images_path, data_manager, date_obs):
         self.images_path = images_path
         self.data_manager = data_manager
         self.date_obs = date_obs
-        self.results_dir = results_dir
+        self.results_dir = RESULTS_DIR
 
     def align_images(self, img_path, img_name, reference_data, data_arrays):
         try:
@@ -101,5 +110,27 @@ class ImageStacking:
             output_path = os.path.join(self.results_dir, f"stacked_{self.date_obs}.png")
             stacked_image.save(output_path)
             print(f"Stacked image saved: {output_path}")
+            self._generate_report()
         else:
             print(f"Only one image for date {self.date_obs}, skipping stacking.")
+
+    def _generate_report(self):
+        report_service = ReportService(reports_dir=REPORTS_DIR)
+        report_service.generate(
+            ReportData(
+                task_name="Image Stacking",
+                sections=[
+                    ReportSection(
+                        title=f"Results for {self.date_obs}",
+                        content=f"Stacked image created for date {self.date_obs}.",
+                        images=[
+                            p
+                            for p in [
+                                Path(self.results_dir) / f"stacked_{self.date_obs}.png"
+                            ]
+                            if p.exists()
+                        ],
+                    )
+                ],
+            )
+        )

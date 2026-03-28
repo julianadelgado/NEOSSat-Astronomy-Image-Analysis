@@ -106,9 +106,7 @@ def main(
 
                         downloader = FitsHandler(sky_coord, date_obs)
                         downloader.download_images_to_directory(clean_name)
-                        preprocessor = ImageStacking(
-                            clean_name, data_manager, date_obs, cfg.results_dir
-                        )
+                        preprocessor = ImageStacking(clean_name, data_manager, date_obs)
                         preprocessor.stack_images()
                         print(f"Cleaning up temporary folder: {clean_name} ")
                         shutil.rmtree(clean_name)
@@ -123,15 +121,14 @@ def main(
 
                     image = fits.getdata(fits_path)
                     header = fits.getheader(fits_path)
-                    results = detector.run(image, header, output_dir)
-                    print(f"{filename}: {results}")
+                    detector.run(image, header, output_dir)
 
                 if run_streaks:
                     print("Running streak detection...")
                     detector = DLStreakDetector(
                         data_dir=cfg.data_dir, clean_results=True
                     )
-                    results = detector.run()
+                    detector.run()
             else:
                 print(
                     f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}"
