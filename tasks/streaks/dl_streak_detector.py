@@ -11,8 +11,6 @@ from preprocessing.preprocessors.fits_to_png import FitsToPng
 from services.satellite_db_service import SatelliteDatabaseService
 from tasks.streaks.dl_streak_detect.detect import detect
 
-from .IDetector import IDetector
-
 config = load_config(None)
 
 DATA_DIR = Path(config.data_dir)
@@ -135,7 +133,7 @@ def extract_observation_time_from_header(header) -> Optional[datetime]:
         return None
 
 
-class DLStreakDetector(IDetector):
+class DLStreakDetector:
     def __init__(
         self,
         weights_path: str = None,
@@ -160,12 +158,6 @@ class DLStreakDetector(IDetector):
 
         # Store FITS paths and headers for later use
         self._fits_metadata: Dict[str, Dict[str, Any]] = {}
-
-    def name(self) -> str:
-        return "DL Streak Detector"
-
-    def required_preprocessors(self) -> List[str]:
-        return ["fits_to_png"]
 
     def _store_fits_metadata(self, fits_path: Path, header, data) -> None:
         """Store FITS metadata for later WCS conversion."""

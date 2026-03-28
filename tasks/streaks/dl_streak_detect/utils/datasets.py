@@ -4,11 +4,9 @@ import glob
 import logging
 import math
 import os
-import pickle
 import random
 import shutil
 import time
-from copy import deepcopy
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -20,7 +18,6 @@ import torch
 import torch.nn.functional as F
 from PIL import ExifTags, Image
 from torch.utils.data import Dataset
-from torchvision.ops import ps_roi_align, ps_roi_pool, roi_align, roi_pool
 
 # from pycocotools import mask as maskUtils
 from tqdm import tqdm
@@ -89,61 +86,6 @@ def exif_size(img):
     return s
 
 
-def create_dataloader(
-    path,
-    imgsz,
-    batch_size,
-    stride,
-    opt,
-    hyp=None,
-    augment=False,
-    cache=False,
-    pad=0.0,
-    rect=False,
-    rank=-1,
-    world_size=1,
-    workers=8,
-    image_weights=False,
-    quad=False,
-    prefix="",
-):
-    # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
-    with torch_distributed_zero_first(rank):
-        dataset = LoadImagesAndLabels(
-            path,
-            imgsz,
-            batch_size,
-            augment=augment,  # augment images
-            hyp=hyp,  # augmentation hyperparameters
-            rect=rect,  # rectangular training
-            cache_images=cache,
-            single_cls=opt.single_cls,
-            stride=int(stride),
-            pad=pad,
-            image_weights=image_weights,
-            prefix=prefix,
-        )
-
-    batch_size = min(batch_size, len(dataset))
-    nw = min(
-        [os.cpu_count() // world_size, batch_size if batch_size > 1 else 0, workers]
-    )  # number of workers
-    sampler = (
-        torch.utils.data.distributed.DistributedSampler(dataset) if rank != -1 else None
-    )
-    loader = torch.utils.data.DataLoader if image_weights else InfiniteDataLoader
-    # Use torch.utils.data.DataLoader() if dataset.properties will update during training else InfiniteDataLoader()
-    dataloader = loader(
-        dataset,
-        batch_size=batch_size,
-        num_workers=nw,
-        sampler=sampler,
-        pin_memory=True,
-        collate_fn=(
-            LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn
-        ),
-    )
-    return dataloader, dataset
 
 
 class InfiniteDataLoader(torch.utils.data.dataloader.DataLoader):
@@ -265,62 +207,6 @@ class LoadImages:  # for inference
         return self.nf  # number of files
 
 
-class LoadWebcam:  # for inference
-    def __init__(self, pipe="0", img_size=640, stride=32):
-        self.img_size = img_size
-        self.stride = stride
-
-        if pipe.isnumeric():
-            pipe = eval(pipe)  # local camera
-        # pipe = 'rtsp://192.168.1.64/1'  # IP camera
-        # pipe = 'rtsp://username:password@192.168.1.64/1'  # IP camera with login
-        # pipe = 'http://wmccpinetop.axiscam.net/mjpg/video.mjpg'  # IP golf camera
-
-        self.pipe = pipe
-        self.cap = cv2.VideoCapture(pipe)  # video capture object
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
-
-    def __iter__(self):
-        self.count = -1
-        return self
-
-    def __next__(self):
-        self.count += 1
-        if cv2.waitKey(1) == ord("q"):  # q to quit
-            self.cap.release()
-            cv2.destroyAllWindows()
-            raise StopIteration
-
-        # Read frame
-        if self.pipe == 0:  # local camera
-            ret_val, img0 = self.cap.read()
-            img0 = cv2.flip(img0, 1)  # flip left-right
-        else:  # IP camera
-            n = 0
-            while True:
-                n += 1
-                self.cap.grab()
-                if n % 30 == 0:  # skip frames
-                    ret_val, img0 = self.cap.retrieve()
-                    if ret_val:
-                        break
-
-        # Print
-        assert ret_val, f"Camera Error {self.pipe}"
-        img_path = "webcam.jpg"
-        print(f"webcam {self.count}: ", end="")
-
-        # Padded resize
-        img = letterbox(img0, self.img_size, stride=self.stride)[0]
-
-        # Convert
-        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
-        img = np.ascontiguousarray(img)
-
-        return img_path, img, img0, None
-
-    def __len__(self):
-        return 0
 
 
 class LoadStreams:  # multiple IP or RTSP cameras
@@ -880,17 +766,6 @@ def augment_hsv(img, hgain=0.5, sgain=0.5, vgain=0.5):
     cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR, dst=img)  # no return needed
 
 
-def hist_equalize(img, clahe=True, bgr=False):
-    # Equalize histogram on BGR image 'img' with img.shape(n,m,3) and range 0-255
-    yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV if bgr else cv2.COLOR_RGB2YUV)
-    if clahe:
-        c = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        yuv[:, :, 0] = c.apply(yuv[:, :, 0])
-    else:
-        yuv[:, :, 0] = cv2.equalizeHist(yuv[:, :, 0])  # equalize Y channel histogram
-    return cv2.cvtColor(
-        yuv, cv2.COLOR_YUV2BGR if bgr else cv2.COLOR_YUV2RGB
-    )  # convert YUV image to RGB
 
 
 def load_mosaic(self, index):
@@ -1161,23 +1036,6 @@ def copy_paste(img, labels, segments, probability=0.5):
     return img, labels, segments
 
 
-def remove_background(img, labels, segments):
-    # Implement Copy-Paste augmentation https://arxiv.org/abs/2012.07177, labels as nx5 np.array(cls, xyxy)
-    n = len(segments)
-    h, w, c = img.shape  # height, width, channels
-    im_new = np.zeros(img.shape, np.uint8)
-    img_new = np.ones(img.shape, np.uint8) * 114
-    for j in range(n):
-        cv2.drawContours(
-            im_new, [segments[j].astype(np.int32)], -1, (255, 255, 255), cv2.FILLED
-        )
-
-        result = cv2.bitwise_and(src1=img, src2=im_new)
-
-        i = result > 0  # pixels to replace
-        img_new[i] = result[i]  # cv2.imwrite('debug.jpg', img)  # debug
-
-    return img_new, labels, segments
 
 
 def sample_segments(img, labels, segments, probability=0.5):
@@ -1219,23 +1077,6 @@ def sample_segments(img, labels, segments, probability=0.5):
     return sample_labels, sample_images, sample_masks
 
 
-def replicate(img, labels):
-    # Replicate labels
-    h, w = img.shape[:2]
-    boxes = labels[:, 1:].astype(int)
-    x1, y1, x2, y2 = boxes.T
-    s = ((x2 - x1) + (y2 - y1)) / 2  # side length (pixels)
-    for i in s.argsort()[: round(s.size * 0.5)]:  # smallest indices
-        x1b, y1b, x2b, y2b = boxes[i]
-        bh, bw = y2b - y1b, x2b - x1b
-        yc, xc = int(random.uniform(0, h - bh)), int(
-            random.uniform(0, w - bw)
-        )  # offset x, y
-        x1a, y1a, x2a, y2a = [xc, yc, xc + bw, yc + bh]
-        img[y1a:y2a, x1a:x2a] = img[y1b:y2b, x1b:x2b]  # img4[ymin:ymax, xmin:xmax]
-        labels = np.append(labels, [[labels[i, 0], x1a, y1a, x2a, y2a]], axis=0)
-
-    return img, labels
 
 
 def letterbox(
@@ -1533,40 +1374,6 @@ def pastein(image, labels, sample_labels, sample_images, sample_masks):
     return labels
 
 
-class Albumentations:
-    # YOLOv5 Albumentations class (optional, only used if package is installed)
-    def __init__(self):
-        self.transform = None
-        import albumentations as A
-
-        self.transform = A.Compose(
-            [
-                A.CLAHE(p=0.01),
-                A.RandomBrightnessContrast(
-                    brightness_limit=0.2, contrast_limit=0.2, p=0.01
-                ),
-                A.RandomGamma(gamma_limit=[80, 120], p=0.01),
-                A.Blur(p=0.01),
-                A.MedianBlur(p=0.01),
-                A.ToGray(p=0.01),
-                A.ImageCompression(quality_lower=75, p=0.01),
-            ],
-            bbox_params=A.BboxParams(
-                format="pascal_voc", label_fields=["class_labels"]
-            ),
-        )
-
-        # logging.info(colorstr('albumentations: ') + ', '.join(f'{x}' for x in self.transform.transforms if x.p))
-
-    def __call__(self, im, labels, p=1.0):
-        if self.transform and random.random() < p:
-            new = self.transform(
-                image=im, bboxes=labels[:, 1:], class_labels=labels[:, 0]
-            )  # transformed
-            im, labels = new["image"], np.array(
-                [[c, *b] for c, b in zip(new["class_labels"], new["bboxes"])]
-            )
-        return im, labels
 
 
 def create_folder(path="./new"):
@@ -1576,100 +1383,9 @@ def create_folder(path="./new"):
     os.makedirs(path)  # make new output folder
 
 
-def flatten_recursive(path="../coco"):
-    # Flatten a recursive directory by bringing all files to top level
-    new_path = Path(path + "_flat")
-    create_folder(new_path)
-    for file in tqdm(glob.glob(str(Path(path)) + "/**/*.*", recursive=True)):
-        shutil.copyfile(file, new_path / Path(file).name)
 
 
-def extract_boxes(
-    path="../coco/",
-):  # from utils.datasets import *; extract_boxes('../coco128')
-    # Convert detection dataset into classification dataset, with one directory per class
-
-    path = Path(path)  # images dir
-    (
-        shutil.rmtree(path / "classifier") if (path / "classifier").is_dir() else None
-    )  # remove existing
-    files = list(path.rglob("*.*"))
-    n = len(files)  # number of files
-    for im_file in tqdm(files, total=n):
-        if im_file.suffix[1:] in img_formats:
-            # image
-            im = cv2.imread(str(im_file))[..., ::-1]  # BGR to RGB
-            h, w = im.shape[:2]
-
-            # labels
-            lb_file = Path(img2label_paths([str(im_file)])[0])
-            if Path(lb_file).exists():
-                with open(lb_file, "r") as f:
-                    lb = np.array(
-                        [x.split() for x in f.read().strip().splitlines()],
-                        dtype=np.float32,
-                    )  # labels
-
-                for j, x in enumerate(lb):
-                    c = int(x[0])  # class
-                    f = (
-                        (path / "classifier")
-                        / f"{c}"
-                        / f"{path.stem}_{im_file.stem}_{j}.jpg"
-                    )  # new filename
-                    if not f.parent.is_dir():
-                        f.parent.mkdir(parents=True)
-
-                    b = x[1:] * [w, h, w, h]  # box
-                    # b[2:] = b[2:].max()  # rectangle to square
-                    b[2:] = b[2:] * 1.2 + 3  # pad
-                    b = xywh2xyxy(b.reshape(-1, 4)).ravel().astype(np.int)
-
-                    b[[0, 2]] = np.clip(b[[0, 2]], 0, w)  # clip boxes outside of image
-                    b[[1, 3]] = np.clip(b[[1, 3]], 0, h)
-                    assert cv2.imwrite(
-                        str(f), im[b[1] : b[3], b[0] : b[2]]
-                    ), f"box failure in {f}"
 
 
-def autosplit(path="../coco", weights=(0.9, 0.1, 0.0), annotated_only=False):
-    """Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
-    Usage: from utils.datasets import *; autosplit('../coco')
-    Arguments
-        path:           Path to images directory
-        weights:        Train, val, test weights (list)
-        annotated_only: Only use images with an annotated txt file
-    """
-    path = Path(path)  # images dir
-    files = sum(
-        [list(path.rglob(f"*.{img_ext}")) for img_ext in img_formats], []
-    )  # image files only
-    n = len(files)  # number of files
-    indices = random.choices(
-        [0, 1, 2], weights=weights, k=n
-    )  # assign each image to a split
-
-    txt = [
-        "autosplit_train.txt",
-        "autosplit_val.txt",
-        "autosplit_test.txt",
-    ]  # 3 txt files
-    [(path / x).unlink() for x in txt if (path / x).exists()]  # remove existing
-
-    print(
-        f"Autosplitting images from {path}"
-        + ", using *.txt labeled images only" * annotated_only
-    )
-    for i, img in tqdm(zip(indices, files), total=n):
-        if (
-            not annotated_only or Path(img2label_paths([str(img)])[0]).exists()
-        ):  # check label
-            with open(path / txt[i], "a") as f:
-                f.write(str(img) + "\n")  # add image to txt file
 
 
-def load_segmentations(self, index):
-    key = "/work/handsomejw66/coco17/" + self.img_files[index]
-    # print(key)
-    # /work/handsomejw66/coco17/
-    return self.segs[key]

@@ -13,7 +13,9 @@ class Config:
     wrong_mode_dir: str = "./wrong_mode"
 
 
-def load_config(path: str | None) -> Config:
+from typing import Optional
+
+def load_config(path: Optional[str]) -> Config:
     if path is None:
         default = Path("config.yaml")
         if not default.exists():

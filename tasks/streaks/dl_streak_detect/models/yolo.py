@@ -892,14 +892,6 @@ class Model(nn.Module):
             )  # cls
             mi.bias = torch.nn.Parameter(b.view(-1), requires_grad=True)
 
-    def _print_biases(self):
-        m = self.model[-1]  # Detect() module
-        for mi in m.m:  # from
-            b = mi.bias.detach().view(m.na, -1).T  # conv.bias(255) to (3,85)
-            print(
-                ("%6g Conv2d.bias:" + "%10.3g" * 6)
-                % (mi.weight.shape[1], *b[:5].mean(1).tolist(), b[5:].mean())
-            )
 
     def fuse(self):  # fuse model Conv2d() + BatchNorm2d() layers
         print("Fusing layers... ")
@@ -934,13 +926,6 @@ class Model(nn.Module):
             self.model = self.model[:-1]  # remove
         return self
 
-    def autoshape(self):  # add autoShape module
-        print("Adding autoShape... ")
-        m = autoShape(self)  # wrap model
-        copy_attr(
-            m, self, include=("yaml", "nc", "hyp", "names", "stride"), exclude=()
-        )  # copy attributes
-        return m
 
     def info(self, verbose=False, img_size=640):  # print model information
         model_info(self, verbose, img_size)
