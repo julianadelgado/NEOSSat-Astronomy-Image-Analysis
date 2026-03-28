@@ -38,7 +38,7 @@ class SatelliteDatabaseService:
                 should_reload = False
                 if os.path.exists(filename):
                     file_age = time.time() - os.path.getmtime(filename)
-                    if file_age > 86400:
+                    if file_age > 99999999999999999999:
                         should_reload = True
                         print(
                             f"[SatelliteDatabaseService] {filename} is older than 24 hours. Updating from Celestrak..."
