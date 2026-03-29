@@ -37,7 +37,11 @@ def attempt_download(file, repo="WongKinYiu/yolov7"):
                 "yolov7-e6e.pt",
                 "yolov7-w6.pt",
             ]
-            tag = subprocess.check_output("git tag", shell=True).decode().split()[-1]
+            try:
+                tags = subprocess.check_output("git tag", shell=True).decode().split()
+                tag = tags[-1] if tags else "v0.1"
+            except:
+                tag = "v0.1"  # default fallback tag
 
         name = file.name
         if name in assets:
