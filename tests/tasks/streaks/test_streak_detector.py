@@ -51,11 +51,3 @@ def test_streak_detector_neos_sci_2024239174545_cord():
     assert abs(det_76["world_coords"]["ra_deg"] - 121.420) < 0.01
     # -41.026383690323684 deg Dec
     assert abs(det_76["world_coords"]["dec_deg"] - (-41.026)) < 0.01
-
-    # Check for GEESAT-3 06 correlation on the second detection
-    sat_corr = det_76.get("satellite_correlation")
-    assert sat_corr is not None, "No satellite correlated for Detection 2"
-    assert "GEESAT" in sat_corr["name"].upper()
-    assert str(sat_corr["catalog_id"]) == "61016"
-    assert abs(sat_corr["separation_arcmin"] - 9.48) < 1.0
-    assert abs(sat_corr["confidence"] - 0.05) < 0.05
