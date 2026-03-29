@@ -125,24 +125,23 @@ def main(
                         shutil.rmtree(clean_name)
                     data_manager.fits_image.close()
 
-            if run_stars:
-                print("Running star detection...")
-                detector = StarDetection()
-                fits_path = Path(cfg.data_dir) / filename
-                output_dir = Path(cfg.results_dir) / filename.replace(".fits", "")
-                output_dir.mkdir(parents=True, exist_ok=True)
+                if run_stars:
+                    print("Running star detection...")
+                    detector = StarDetection()
+                    fits_path = Path(cfg.data_dir) / filename
+                    output_dir = Path(cfg.results_dir) / filename.replace(".fits", "")
+                    output_dir.mkdir(parents=True, exist_ok=True)
 
-                image = fits.getdata(fits_path)
-                header = fits.getheader(fits_path)
-                results = detector.run(image, header, output_dir)
-                print(f"{filename}: {results}")
+                    image = fits.getdata(fits_path)
+                    header = fits.getheader(fits_path)
+                    results = detector.run(image, header, output_dir)
+                    print(f"{filename}: {results}")
 
         else:
             print(f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}")
             data_manager.fits_image.close()
             os.makedirs(cfg.wrong_mode_dir, exist_ok=True)
             shutil.move(file_path, os.path.join(cfg.wrong_mode_dir, filename))
-            return
 
     # Run streak detection on the whole directory once
     if run_streaks:
