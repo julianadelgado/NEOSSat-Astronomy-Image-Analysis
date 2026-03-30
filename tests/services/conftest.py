@@ -35,6 +35,8 @@ def make_fake_satellite():
 
     return _factory
 
+
+@pytest.fixture
 def report_service(tmp_path):
     return ReportService(reports_dir=tmp_path)
 
