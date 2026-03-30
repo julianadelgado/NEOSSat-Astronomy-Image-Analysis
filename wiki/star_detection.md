@@ -1,6 +1,6 @@
 # Star Detection
 
-[Back to README](/README.md)
+[Back to wiki](./sidebar.md)
 
 ## Overview 
 Star detection identifies point sources in NEOSSat images and cross-references them against the SIMBAD astronomical database to classify detected objects by type (stars, galaxies, nebulae, etc.).

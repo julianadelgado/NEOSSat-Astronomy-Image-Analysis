@@ -11,16 +11,29 @@ Install the dependencies for the mode(s) you want to use:
 ```
 uv sync --extra api
 uv sync --extra cli
-uv sync --extra gui
 ```
+Or the make command: `make sync-all`
+
 Then run the desired script:
 
 | Command | Description |
 |---|---|
 | `neossat-api` | Start the REST API server on port 8000 |
 | `neossat-cli` | Run the terminal CLI  |
-| `neossat-gui` | Launch the desktop GUI |
 
+Or use make commands directly:
+
+| Command | Description |
+|---|---|
+| `make sync-all` | Sync all dependencies |
+| `make api` | Run the NEOSSat API |
+| `make cli ARGS="..."` | Run the CLI with custom arguments |
+| `make streaks` | Run the CLI with `--streaks` |
+| `make stars` | Run the CLI with `--stars` |
+| `make stack` | Run the CLI with `--image-stacking` |
+| `make all` | Run the CLI with all tasks |
+| `make test` | Run tests with pytest |
+| `make help` | Print all available commands |
 
 ## Email Setup
 
