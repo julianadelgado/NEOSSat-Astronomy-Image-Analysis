@@ -41,7 +41,7 @@ class SatelliteDatabaseService:
                     if file_age > 172800:
                         should_reload = True
                         print(
-                            f"[SatelliteDatabaseService] {filename} is older than 24 hours. Updating from Celestrak..."
+                            f"[SatelliteDatabaseService] {filename} is older than 48 hours. Updating from Celestrak..."
                         )
 
                 self.satellites = self.load.tle_file(
