@@ -28,7 +28,7 @@ with open(CSV_FILE, newline='') as csvfile:
         if "Product ID" in h:
             product_index = i
     if obs_index is None or product_index is None:
-        raise ValueError("Impossible de trouver les colonnes Obs. ID ou Product ID dans le CSV")
+        raise ValueError("No Obs. ID or Product ID column found in CSV")
 
     for row in reader:
         product_id = row[product_index].strip().lower()
@@ -37,7 +37,7 @@ with open(CSV_FILE, newline='') as csvfile:
             obs_ids.append(obs_id)
 
 if not obs_ids:
-    raise ValueError("Aucune Obs. ID trouvée avec Product ID = 'cord'.")
+    raise ValueError("No Obs. ID found with Product ID = 'cord'.")
 
 
 def download_image(obs_id):
@@ -48,14 +48,14 @@ def download_image(obs_id):
         response = requests.get(url)
         response.raise_for_status()
     except requests.RequestException as e:
-        print(f"Erreur lors du téléchargement de {number_part}: {e}")
+        print(f"Error occurred while downloading {number_part}: {e}")
         return None
 
     filename = os.path.join(OUTPUT_FOLDER, f"{number_part}.fits")
     with open(filename, 'wb') as f:
         f.write(response.content)
 
-    print(f"Téléchargé : {filename}")
+    print(f"Downloaded : {filename}")
     return filename
 
 
@@ -77,7 +77,7 @@ while True:
             print(json.dumps(result, indent=2))
 
             stars_detected = result["results"]["star_detection"]["stars_detected"]
-            print(f"Étoiles détectées : {stars_detected}")
+            print(f"Stars detected: {stars_detected}")
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             target_folder = os.path.join(RESULTS_FOLDER, timestamp)
@@ -87,9 +87,21 @@ while True:
                 if os.path.isfile(f_path):
                     shutil.move(f_path, os.path.join(target_folder, f))
 
+            try:
+                health_response = requests.get("http://localhost:8000/health")
+                health_response.raise_for_status()
+                health_data = health_response.json()
+                service_status = health_data.get("status")
+                avg_preprocessing_time = health_data.get("average_preprocessing_time_sec")
+                print(f"Service status: {service_status}, average preprocessing time: {avg_preprocessing_time:.3f}s")
+            except requests.RequestException as e:
+                print(f"Error occurred while calling /health endpoint: {e}")
+            except KeyError as e:
+                print(f"Missing key in /health response: {e}")
+
         except requests.RequestException as e:
-            print(f"Erreur lors de l'appel de preprocessing pour {fits_file}: {e}")
+            print(f"Error occurred while calling preprocessing for {fits_file}: {e}")
         except KeyError as e:
-            print(f"Clé manquante dans la réponse : {e}")
+            print(f"Missing key in response: {e}")
 
     time.sleep(INTERVAL_SECONDS)
