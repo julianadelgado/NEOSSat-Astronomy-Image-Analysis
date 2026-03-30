@@ -48,6 +48,7 @@ def test_image_stacking_flag_only_runs_image_stacking(
 
 
 @patch("cli.main.StarDetection")
+@patch("cli.main.DataManager")
 @patch("cli.main.fits.getheader", return_value=MagicMock())
 @patch("cli.main.fits.getdata", return_value=MagicMock())
 @patch("cli.main.Path.mkdir")
@@ -61,6 +62,7 @@ def test_stars_flag_only_runs_star_detection(
     mock_mkdir,
     mock_getdata,
     mock_getheader,
+    mock_data_manager,
     mock_star_detection,
 ):
     mock_config.return_value = MagicMock(
