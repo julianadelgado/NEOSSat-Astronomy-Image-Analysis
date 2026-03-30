@@ -3,6 +3,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
+import markdown
+from weasyprint import HTML
+
 
 @dataclass
 class ReportTable:
@@ -53,6 +56,7 @@ class ReportService:
             f.write("\n".join(lines))
 
         print(f"Report generated: {output_path.absolute()}")
+        self.pdf_transform(output_path)
         return output_path
 
     def _render_section(self, section: ReportSection, level: int) -> List[str]:
@@ -63,7 +67,7 @@ class ReportService:
             lines += [section.content, ""]
 
         for image in section.images:
-            lines += [f"![{image.stem}]({image.absolute().as_posix()})", ""]
+            lines += [f"![{image.stem}](file://{image.absolute().as_posix()})", ""]
 
         for table in section.tables:
             lines.append("| " + " | ".join(table.headers) + " |")
@@ -78,4 +82,19 @@ class ReportService:
         lines += ["---", ""]
         return lines
 
-    #TODO PDF generation method
+    def pdf_transform(self, markdown_path: Path) -> Path:
+        pdf_path = markdown_path.with_suffix(".pdf")
+        body = markdown.markdown(
+            markdown_path.read_text(encoding="utf-8"), extensions=["tables"]
+        )
+        html = f"""
+        <html><head><style>
+            img {{ max-width: 100%; height: auto; display: block; margin: 1em 0; }}
+            body {{ font-family: sans-serif; margin: 2em; }}
+        </style></head><body>{body}</body></html>
+        """
+        HTML(string=html, base_url=markdown_path.parent.resolve().as_uri()).write_pdf(
+            pdf_path
+        )
+        print(f"PDF report generated: {pdf_path.absolute()}")
+        return pdf_path
