@@ -4,12 +4,16 @@ import requests
 import time
 import os
 import json
+import shutil
+from datetime import datetime
 
 CSV_FILE = "../data/result_wrpm7ldeprck4b3x.csv"
 OUTPUT_FOLDER = "../data/"
 INTERVAL_SECONDS = 10
+RESULTS_FOLDER = "../results/"
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
 obs_ids = []
 with open(CSV_FILE, newline='') as csvfile:
@@ -60,17 +64,32 @@ while True:
     fits_file = download_image(selected_obs_id)
     if fits_file:
         try:
-            fits_file = os.path.abspath(fits_file)
+            fits_file_abs = os.path.abspath(fits_file)
             response = requests.post(
                 "http://localhost:8000/preprocessing",
                 json={
-                    "fits_file": fits_file,
+                    "fits_file": fits_file_abs,
                     "preprocessors": ["star_detection", "fits_to_png"]
                 }
             )
             response.raise_for_status()
             result = response.json()
             print(json.dumps(result, indent=2))
+
+            stars_detected = result["results"]["star_detection"]["stars_detected"]
+            print(f"Étoiles détectées : {stars_detected}")
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            target_folder = os.path.join(RESULTS_FOLDER, timestamp)
+            os.makedirs(target_folder, exist_ok=True)
+            for f in os.listdir(RESULTS_FOLDER):
+                f_path = os.path.join(RESULTS_FOLDER, f)
+                if os.path.isfile(f_path):
+                    shutil.move(f_path, os.path.join(target_folder, f))
+
         except requests.RequestException as e:
             print(f"Erreur lors de l'appel de preprocessing pour {fits_file}: {e}")
+        except KeyError as e:
+            print(f"Clé manquante dans la réponse : {e}")
+
     time.sleep(INTERVAL_SECONDS)
