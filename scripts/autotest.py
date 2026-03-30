@@ -3,7 +3,7 @@ import random
 import requests
 import time
 import os
-
+import json
 
 CSV_FILE = "../data/result_wrpm7ldeprck4b3x.csv"
 OUTPUT_FOLDER = "../data/"
@@ -37,7 +37,7 @@ if not obs_ids:
 
 
 def download_image(obs_id):
-    number_part = obs_id.split('/')[-1]  # Use to extract numbers : 2025071222825 for example - AB 30/03/2026
+    number_part = obs_id.split('/')[-1]
     url = f"https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/raven/files/cadc:NEOSSAT/NEOS_SCI_{number_part}_cord.fits"
 
     try:
@@ -45,16 +45,32 @@ def download_image(obs_id):
         response.raise_for_status()
     except requests.RequestException as e:
         print(f"Erreur lors du téléchargement de {number_part}: {e}")
-        return
+        return None
 
     filename = os.path.join(OUTPUT_FOLDER, f"{number_part}.fits")
     with open(filename, 'wb') as f:
         f.write(response.content)
 
     print(f"Téléchargé : {filename}")
+    return filename
 
 
 while True:
     selected_obs_id = random.choice(obs_ids)
-    download_image(selected_obs_id)
+    fits_file = download_image(selected_obs_id)
+    if fits_file:
+        try:
+            fits_file = os.path.abspath(fits_file)
+            response = requests.post(
+                "http://localhost:8000/preprocessing",
+                json={
+                    "fits_file": fits_file,
+                    "preprocessors": ["star_detection", "fits_to_png"]
+                }
+            )
+            response.raise_for_status()
+            result = response.json()
+            print(json.dumps(result, indent=2))
+        except requests.RequestException as e:
+            print(f"Erreur lors de l'appel de preprocessing pour {fits_file}: {e}")
     time.sleep(INTERVAL_SECONDS)
