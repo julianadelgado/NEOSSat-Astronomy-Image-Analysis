@@ -1,6 +1,6 @@
 # Image Preprocessing
 
-[Back to README](/README.md)
+[Back to wiki](./sidebar.md)
 
 ## Running the server
 

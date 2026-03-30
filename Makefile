@@ -1,9 +1,8 @@
-.PHONY: gui api cli streaks stars stack all sync-gui sync-api sync-cli sync-all test help
+.PHONY: api cli streaks stars stack all sync-gui sync-api sync-cli sync-all test help
 
 help:
 	@echo "Available commands:"
 	@echo "  make sync-all : Sync all dependencies (uv sync --all-extras)"
-	@echo "  make gui      : Run the NEOSSat GUI"
 	@echo "  make api      : Run the NEOSSat API"
 	@echo "  make cli      : Run the NEOSSat CLI (pass args via ARGS=\"...\")"
 	@echo "  make streaks  : Run the CLI with --streaks flag"
@@ -14,9 +13,6 @@ help:
 
 sync-all:
 	uv sync --all-extras
-
-gui:
-	uv run --extra gui neossat-gui
 
 api:
 	uv run --extra api neossat-api
