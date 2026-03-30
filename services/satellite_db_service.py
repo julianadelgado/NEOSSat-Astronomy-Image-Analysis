@@ -34,11 +34,11 @@ class SatelliteDatabaseService:
                 import time
 
                 filename = "gp.php"
-                # If file exists, check if it's older than 1 day (86400 seconds)
+                # If file exists, check if it's older than 2 days (86400*2 seconds)
                 should_reload = False
                 if os.path.exists(filename):
                     file_age = time.time() - os.path.getmtime(filename)
-                    if file_age > 99999999999999999999:
+                    if file_age > 172800:
                         should_reload = True
                         print(
                             f"[SatelliteDatabaseService] {filename} is older than 24 hours. Updating from Celestrak..."
