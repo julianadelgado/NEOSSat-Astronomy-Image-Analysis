@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
-# Must be set before importing cli.main, since EmailService is instantiated at module level
 os.environ.setdefault("SMTP_SERVER", "smtp.test")
 os.environ.setdefault("SMTP_USER", "test@test.com")
 os.environ.setdefault("SMTP_PASSWORD", "test_password")
