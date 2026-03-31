@@ -30,8 +30,23 @@ class SatelliteDatabaseService:
         if self.satellites is None:
             print("[SatelliteDatabaseService] Loading satellite TLEs from Celestrak...")
             try:
-                # Load TLE data directly from Celestrak
-                self.satellites = self.load.tle_file(self.celestrak_url, reload=False)
+                import os
+                import time
+
+                filename = "gp.php"
+                # If file exists, check if it's older than 2 days (86400*2 seconds)
+                should_reload = False
+                if os.path.exists(filename):
+                    file_age = time.time() - os.path.getmtime(filename)
+                    if file_age > 172800:
+                        should_reload = True
+                        print(
+                            f"[SatelliteDatabaseService] {filename} is older than 48 hours. Updating from Celestrak..."
+                        )
+
+                self.satellites = self.load.tle_file(
+                    self.celestrak_url, filename=filename, reload=should_reload
+                )
                 print(
                     f"[SatelliteDatabaseService] Loaded {len(self.satellites)} satellites."
                 )

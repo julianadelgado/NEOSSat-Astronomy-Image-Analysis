@@ -12,12 +12,10 @@ from utils.general import (
     apply_classifier,
     check_img_size,
     check_imshow,
-    check_requirements,
     increment_path,
     non_max_suppression,
     scale_coords,
     set_logging,
-    strip_optimizer,
     xyxy2xywh,
 )
 from utils.plots import plot_one_box

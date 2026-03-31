@@ -661,13 +661,6 @@ class RepConv(nn.Module):
         t = (gamma / std).reshape(-1, 1, 1, 1)
         return kernel * t, beta - running_mean * gamma / std
 
-    def repvgg_convert(self):
-        kernel, bias = self.get_equivalent_kernel_bias()
-        return (
-            kernel.detach().cpu().numpy(),
-            bias.detach().cpu().numpy(),
-        )
-
     def fuse_conv_bn(self, conv, bn):
 
         std = (bn.running_var + bn.eps).sqrt()
@@ -920,37 +913,6 @@ class TransformerLayer(nn.Module):
         return x
 
 
-class TransformerBlock(nn.Module):
-    # Vision Transformer https://arxiv.org/abs/2010.11929
-    def __init__(self, c1, c2, num_heads, num_layers):
-        super().__init__()
-        self.conv = None
-        if c1 != c2:
-            self.conv = Conv(c1, c2)
-        self.linear = nn.Linear(c2, c2)  # learnable position embedding
-        self.tr = nn.Sequential(
-            *[TransformerLayer(c2, num_heads) for _ in range(num_layers)]
-        )
-        self.c2 = c2
-
-    def forward(self, x):
-        if self.conv is not None:
-            x = self.conv(x)
-        b, _, w, h = x.shape
-        p = x.flatten(2)
-        p = p.unsqueeze(0)
-        p = p.transpose(0, 3)
-        p = p.squeeze(3)
-        e = self.linear(p)
-        x = p + e
-
-        x = self.tr(x)
-        x = x.unsqueeze(3)
-        x = x.transpose(0, 3)
-        x = x.reshape(b, self.c2, w, h)
-        return x
-
-
 ##### end of transformer #####
 
 
@@ -1051,12 +1013,6 @@ class autoShape(nn.Module):
     def __init__(self, model):
         super(autoShape, self).__init__()
         self.model = model.eval()
-
-    def autoshape(self):
-        print(
-            "autoShape already enabled, skipping... "
-        )  # model already converted to model.autoshape()
-        return self
 
     @torch.no_grad()
     def forward(self, imgs, size=640, augment=False, profile=False):
@@ -1705,36 +1661,6 @@ class RepConv_OREPA(nn.Module):
     #       loss.backward()
 
     # Not used for OREPA
-    def get_custom_L2(self):
-        K3 = self.rbr_dense.weight_gen()
-        K1 = self.rbr_1x1.conv.weight
-        t3 = (
-            (
-                self.rbr_dense.bn.weight
-                / ((self.rbr_dense.bn.running_var + self.rbr_dense.bn.eps).sqrt())
-            )
-            .reshape(-1, 1, 1, 1)
-            .detach()
-        )
-        t1 = (
-            (
-                self.rbr_1x1.bn.weight
-                / ((self.rbr_1x1.bn.running_var + self.rbr_1x1.bn.eps).sqrt())
-            )
-            .reshape(-1, 1, 1, 1)
-            .detach()
-        )
-
-        l2_loss_circle = (K3**2).sum() - (
-            K3[:, :, 1:2, 1:2] ** 2
-        ).sum()  # The L2 loss of the "circle" of weights in 3x3 kernel. Use regular L2 on them.
-        eq_kernel = (
-            K3[:, :, 1:2, 1:2] * t3 + K1 * t1
-        )  # The equivalent resultant central point of 3x3 kernel.
-        l2_loss_eq_kernel = (
-            eq_kernel**2 / (t3**2 + t1**2)
-        ).sum()  # Normalize for an L2 coefficient comparable to regular L2.
-        return l2_loss_eq_kernel + l2_loss_circle
 
     def get_equivalent_kernel_bias(self):
         kernel3x3, bias3x3 = self._fuse_bn_tensor(self.rbr_dense)
@@ -2371,12 +2297,6 @@ class WindowAttention_v2(nn.Module):
         x = self.proj_drop(x)
         return x
 
-    def extra_repr(self) -> str:
-        return (
-            f"dim={self.dim}, window_size={self.window_size}, "
-            f"pretrained_window_size={self.pretrained_window_size}, num_heads={self.num_heads}"
-        )
-
     def flops(self, N):
         # calculate flops for 1 window with token length of N
         flops = 0
@@ -2593,12 +2513,6 @@ class SwinTransformerLayer_v2(nn.Module):
             x = x[:, :, :H_, :W_]  # reverse padding
 
         return x
-
-    def extra_repr(self) -> str:
-        return (
-            f"dim={self.dim}, input_resolution={self.input_resolution}, num_heads={self.num_heads}, "
-            f"window_size={self.window_size}, shift_size={self.shift_size}, mlp_ratio={self.mlp_ratio}"
-        )
 
     def flops(self):
         flops = 0

@@ -17,8 +17,6 @@ from services.report_service import (
 from services.satellite_db_service import SatelliteDatabaseService
 from tasks.streaks.dl_streak_detect.detect import detect
 
-from .IDetector import IDetector
-
 config = load_config(None)
 
 DATA_DIR = Path(config.data_dir)
@@ -141,24 +139,22 @@ def extract_observation_time_from_header(header) -> Optional[datetime]:
         return None
 
 
-class DLStreakDetector(IDetector):
+class DLStreakDetector:
     def __init__(
         self,
         weights_path: str = None,
         img_size: int = 640,
         conf_thres: float = 0.25,
         iou_thres: float = 0.45,
-        correlate_satellite: bool = True,
         satellite_search_radius_arcmin: float = 10.0,
         data_dir: str = None,
         clean_results: bool = False,
     ):
-        base_path = Path(__file__).parent.parent / "dl_streak_detect"
+        base_path = Path(__file__).parent / "dl_streak_detect"
         self.weights_path = weights_path or str(base_path / "weights/best.pt")
         self.img_size = img_size
         self.conf_thres = conf_thres
         self.iou_thres = iou_thres
-        self.correlate_satellite = correlate_satellite
         self.satellite_search_radius_arcmin = satellite_search_radius_arcmin
         self.satellite_db = SatelliteDatabaseService()
         self.data_dir = Path(data_dir) if data_dir else DATA_DIR
@@ -166,12 +162,6 @@ class DLStreakDetector(IDetector):
 
         # Store FITS paths and headers for later use
         self._fits_metadata: Dict[str, Dict[str, Any]] = {}
-
-    def name(self) -> str:
-        return "DL Streak Detector"
-
-    def required_preprocessors(self) -> List[str]:
-        return ["fits_to_png"]
 
     def _store_fits_metadata(self, fits_path: Path, header, data) -> None:
         """Store FITS metadata for later WCS conversion."""
@@ -418,6 +408,11 @@ class DLStreakDetector(IDetector):
         )
 
         try:
+            # Clean up old labels to prevent appending from previous runs
+            out_dir = Path(opt.project) / opt.name
+            if out_dir.exists():
+                shutil.rmtree(out_dir, ignore_errors=True)
+
             detect(opt=opt)
 
             # Parse results from the text files generated
@@ -484,11 +479,6 @@ class DLStreakDetector(IDetector):
         finally:
             if INFERENCE_DATA_DIR.exists():
                 shutil.rmtree(INFERENCE_DATA_DIR, ignore_errors=True)
-
-            # Clean up skyfield downloaded TLE files
-            gp_php_path = Path("gp.php")
-            if gp_php_path.exists():
-                gp_php_path.unlink()
 
         self._generate_report(results_summary, Path(opt.project) / opt.name)
 
