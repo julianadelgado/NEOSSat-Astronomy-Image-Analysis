@@ -137,11 +137,13 @@ def main(
                     results = detector.run(image, header, output_dir)
                     print(f"{filename}: {results}")
 
-        else:
-            print(f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}")
-            data_manager.fits_image.close()
-            os.makedirs(cfg.wrong_mode_dir, exist_ok=True)
-            shutil.move(file_path, os.path.join(cfg.wrong_mode_dir, filename))
+            else:
+                print(
+                    f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}"
+                )
+                data_manager.fits_image.close()
+                os.makedirs(cfg.wrong_mode_dir, exist_ok=True)
+                shutil.move(file_path, os.path.join(cfg.wrong_mode_dir, filename))
 
     # Run streak detection on the whole directory once
     if run_streaks:

@@ -140,7 +140,6 @@ class DLStreakDetector:
         img_size: int = 640,
         conf_thres: float = 0.25,
         iou_thres: float = 0.45,
-        correlate_satellite: bool = True,
         satellite_search_radius_arcmin: float = 10.0,
         data_dir: str = None,
         clean_results: bool = False,
@@ -150,7 +149,6 @@ class DLStreakDetector:
         self.img_size = img_size
         self.conf_thres = conf_thres
         self.iou_thres = iou_thres
-        self.correlate_satellite = correlate_satellite
         self.satellite_search_radius_arcmin = satellite_search_radius_arcmin
         self.satellite_db = SatelliteDatabaseService()
         self.data_dir = Path(data_dir) if data_dir else DATA_DIR
@@ -451,7 +449,7 @@ class DLStreakDetector:
                         if txt_path.stem not in keep_stems:
                             txt_path.unlink()
 
-                # Update the summary to only return the kept streaks
+                #Update the summary to only return the kept streaks
                 results_summary = [
                     r for r in results_summary if r["file"] in keep_stems
                 ]
