@@ -29,6 +29,7 @@ def test_send_email_failure_does_not_raise(email_service):
         # Should print the error, not crash
         email_service.send_email("user@example.com", "Subject", "Body")
 
+
 def test_send_completion_notification_formats_email_correctly(notification_service):
     with patch.object(notification_service, "send_email") as mock_send_email:
         notification_service.send_completion_notification(

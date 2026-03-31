@@ -1,5 +1,4 @@
 import os
-
 from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
@@ -147,6 +146,7 @@ def test_no_flags_runs_all_tasks(
     mock_image_stacking.assert_called_once()
     mock_streak_detector.assert_called_once()
 
+
 @patch("cli.main.DataManager")
 @listdir_patch
 @patch("cli.main.load_config")
@@ -162,10 +162,12 @@ def test_notification_sent_after_tasks_complete(
     )
 
     with patch("cli.main.svc.send_completion_notification") as mock_notify:
-        with patch("cli.main.DLStreakDetector"), patch("cli.main.StarDetection"), patch(
-            "cli.main.fits.getdata", return_value=MagicMock()
-        ), patch("cli.main.fits.getheader", return_value=MagicMock()), patch(
-            "cli.main.Path.mkdir"
+        with (
+            patch("cli.main.DLStreakDetector"),
+            patch("cli.main.StarDetection"),
+            patch("cli.main.fits.getdata", return_value=MagicMock()),
+            patch("cli.main.fits.getheader", return_value=MagicMock()),
+            patch("cli.main.Path.mkdir"),
         ):
             result = runner.invoke(
                 app, ["--data-dir", "/fake", "--email", "test@example.com"]
@@ -192,10 +194,11 @@ def test_notification_sent_with_stars_flag(
     )
 
     with patch("cli.main.svc.send_completion_notification") as mock_notify:
-        with patch("cli.main.StarDetection"), patch(
-            "cli.main.fits.getdata", return_value=MagicMock()
-        ), patch("cli.main.fits.getheader", return_value=MagicMock()), patch(
-            "cli.main.Path.mkdir"
+        with (
+            patch("cli.main.StarDetection"),
+            patch("cli.main.fits.getdata", return_value=MagicMock()),
+            patch("cli.main.fits.getheader", return_value=MagicMock()),
+            patch("cli.main.Path.mkdir"),
         ):
             result = runner.invoke(
                 app, ["--data-dir", "/fake", "--email", "test@example.com", "--stars"]
@@ -247,9 +250,12 @@ def test_notification_sent_with_image_stacking_flag(
     mock_data_manager.return_value.get_images_same_date.return_value = MagicMock()
 
     with patch("cli.main.svc.send_completion_notification") as mock_notify:
-        with patch("cli.main.ImageStacking"), patch("cli.main.FitsHandler"), patch(
-            "cli.main.shutil.rmtree"
-        ), patch("cli.main.os.makedirs"):
+        with (
+            patch("cli.main.ImageStacking"),
+            patch("cli.main.FitsHandler"),
+            patch("cli.main.shutil.rmtree"),
+            patch("cli.main.os.makedirs"),
+        ):
             result = runner.invoke(
                 app,
                 [
@@ -263,5 +269,3 @@ def test_notification_sent_with_image_stacking_flag(
 
     assert result.exit_code == 0
     mock_notify.assert_called_once_with("test@example.com", ["image_stacking"])
-
-
