@@ -13,6 +13,9 @@ def email_service(monkeypatch):
     monkeypatch.setenv("SMTP_PASSWORD", "password")
     return EmailService()
 
+@pytest.fixture
+def notification_service(email_service):
+    return email_service
 
 @pytest.fixture
 def make_fake_satellite():

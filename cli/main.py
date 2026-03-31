@@ -8,15 +8,16 @@ from astropy.io import fits
 from cli.validator import validate_data_directory, validate_email
 from handlers.data_manager import DataManager
 from handlers.fits_handler import FitsHandler
+from services.email_service import EmailService
 from tasks.stacking.image_stacking import ImageStacking
 from tasks.stars.star_detection import StarDetection
 from tasks.streaks.dl_streak_detector import DLStreakDetector
-from services.email_service import EmailService
 
 from .config import load_config
 
 app = typer.Typer()
 svc = EmailService()
+
 
 @app.command()
 def main(
@@ -157,6 +158,7 @@ def main(
     if run_streaks:
         completed_tasks.append("streaks")
     svc.send_completion_notification(cfg.email, completed_tasks)
+
 
 if __name__ == "__main__":
     main()
