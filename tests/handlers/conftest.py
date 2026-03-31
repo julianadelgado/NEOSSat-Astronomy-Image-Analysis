@@ -14,6 +14,8 @@ def sample_fits_image(tmp_path):
     hdu = fits.PrimaryHDU(data)
     hdu.header["RA"] = 120.5
     hdu.header["DEC"] = 45.3
+    hdu.header["MODE"] = "16 - FINE_POINT"
+    hdu.header["DATE-OBS"] = "2021-05-19T19:01:37.0"
 
     file_path = tmp_path / "sample.fits"
     hdu.writeto(file_path)

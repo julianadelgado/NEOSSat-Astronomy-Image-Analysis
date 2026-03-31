@@ -9,7 +9,9 @@ from astropy.stats import sigma_clipped_stats
 from astropy.wcs import WCS
 from photutils.detection import DAOStarFinder
 
+from cli.config import load_config
 from preprocessing.core.preprocessor import IPreprocessor
+from services.report_service import ReportData, ReportSection, ReportService
 from tasks.stars.heatmap import generate_heatmap
 from tasks.stars.map_groups import map_to_group
 from tasks.stars.queries import query_simbad_skycoord
@@ -43,6 +45,11 @@ TYPE_SYMBOLS = {
     "cloud": {"marker": "p", "color": "brown"},
     "Default": {"marker": "x", "color": "purple"},
 }
+
+config = load_config(None)
+
+OUTPUT_DIR = Path(config.results_dir)
+REPORTS_DIR = Path(config.reports_dir)
 
 
 class StarDetection(IPreprocessor):
@@ -86,6 +93,8 @@ class StarDetection(IPreprocessor):
             image, wcs, detected_candidates, matched_candidates, output_dir
         )
 
+        self._generate_report(output_dir, {"stars_detected": len(matched_candidates)})
+
         return {"stars_detected": len(matched_candidates)}
 
     """===> Private Functions <==="""
@@ -125,10 +134,11 @@ class StarDetection(IPreprocessor):
 
         sources = daofind(image - median)
 
-        print(f"Found {len(sources)} potential star candidates.")
-
         if sources is None or len(sources) == 0:
+            print("Found 0 potential star candidates.")
             return []
+
+        print(f"Found {len(sources)} potential star candidates.")
 
         x_coord = sources["xcentroid"]
         y_coord = sources["ycentroid"]
@@ -427,3 +437,28 @@ class StarDetection(IPreprocessor):
         plt.close(fig)
 
         print(f"Region catalog map saved to {map_path}")
+
+    def _generate_report(self, output_dir: Path, results: dict):
+        report_service = ReportService(reports_dir=REPORTS_DIR)
+        star_images = [
+            p
+            for p in [
+                output_dir / "detected_stars_img.png",
+                output_dir / "detected_stars_map.png",
+                output_dir / "region_catalog_map.png",
+                output_dir / "candidates_heatmap.png",
+            ]
+            if p.exists()
+        ]
+        report_service.generate(
+            ReportData(
+                task_name="Star Detection",
+                sections=[
+                    ReportSection(
+                        title=f"Results for {output_dir.name}",
+                        content=f"Stars detected: {results.get('stars_detected', 0)}",
+                        images=star_images,
+                    )
+                ],
+            )
+        )
