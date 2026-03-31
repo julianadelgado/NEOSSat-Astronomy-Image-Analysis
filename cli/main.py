@@ -11,11 +11,12 @@ from handlers.fits_handler import FitsHandler
 from tasks.stacking.image_stacking import ImageStacking
 from tasks.stars.star_detection import StarDetection
 from tasks.streaks.dl_streak_detector import DLStreakDetector
+from services.email_service import EmailService
 
 from .config import load_config
 
 app = typer.Typer()
-
+svc = EmailService()
 
 @app.command()
 def main(
@@ -148,6 +149,14 @@ def main(
         detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
         detector.run()
 
+    completed_tasks = []
+    if run_image_stacking:
+        completed_tasks.append("image_stacking")
+    if run_stars:
+        completed_tasks.append("stars")
+    if run_streaks:
+        completed_tasks.append("streaks")
+    svc.send_completion_notification(cfg.email, completed_tasks)
 
 if __name__ == "__main__":
     main()
