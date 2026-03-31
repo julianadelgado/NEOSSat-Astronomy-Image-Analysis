@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from services.email_service import EmailService
+from services.report_service import ReportData, ReportSection, ReportService
 
 
 @pytest.fixture
@@ -33,3 +34,23 @@ def make_fake_satellite():
         return sat
 
     return _factory
+
+
+@pytest.fixture
+def report_service(tmp_path):
+    return ReportService(reports_dir=tmp_path)
+
+
+@pytest.fixture
+def sample_image(tmp_path):
+    image = tmp_path / "test_image.png"
+    image.write_bytes(b"")
+    return image
+
+
+@pytest.fixture
+def report_data_with_image(sample_image):
+    return ReportData(
+        task_name="Test Task",
+        sections=[ReportSection(title="Results", images=[sample_image])],
+    )

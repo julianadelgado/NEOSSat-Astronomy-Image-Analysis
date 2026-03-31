@@ -54,15 +54,17 @@ def test_image_stacking_flag_only_runs_image_stacking(
 @patch("cli.main.Path.mkdir")
 @listdir_patch
 @patch("cli.main.load_config")
+@patch("cli.main.DataManager")
 @valid_dir_patch
 def test_stars_flag_only_runs_star_detection(
     mock_exists,
+    mock_data_manager,
     mock_config,
     mock_listdir,
     mock_mkdir,
     mock_getdata,
     mock_getheader,
-    mock_data_manager,
+    mock_dm,
     mock_star_detection,
 ):
     mock_config.return_value = MagicMock(
@@ -80,9 +82,10 @@ def test_stars_flag_only_runs_star_detection(
 @patch("cli.main.DLStreakDetector")
 @listdir_patch
 @patch("cli.main.load_config")
+@patch("cli.main.DataManager")
 @valid_dir_patch
 def test_streaks_flag_only_runs_streak_detection(
-    mock_exists, mock_config, mock_listdir, mock_streak_detector
+    mock_exists, mock_data_manager, mock_config, mock_listdir, mock_streak_detector
 ):
     mock_config.return_value = MagicMock(
         data_dir="/fake", results_dir="/fake/results", email="test@example.com"

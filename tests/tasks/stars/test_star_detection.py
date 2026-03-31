@@ -41,8 +41,9 @@ def test_star_detection_run(tmp_path):
         mock_instance.return_value = fake_sources
         mock_dao.return_value = mock_instance
 
-        detector = StarDetection()
-        result = detector.run(image, header, tmp_path)
+        with patch("tasks.stars.star_detection.REPORTS_DIR", tmp_path):
+            detector = StarDetection()
+            result = detector.run(image, header, tmp_path)
 
     assert result["stars_detected"] == 1
 

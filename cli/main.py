@@ -100,7 +100,7 @@ def main(
         if filename.endswith(".fits"):
             file_path = os.path.join(cfg.data_dir, filename)
             data_manager = DataManager(file_path)
-            if data_manager.is_fits_correct_mode():
+            if True or data_manager.is_fits_correct_mode():
                 # TODO verify order of call operations
                 if run_image_stacking:
                     print("Running image stacking...")
@@ -117,9 +117,7 @@ def main(
 
                         downloader = FitsHandler(sky_coord, date_obs)
                         downloader.download_images_to_directory(clean_name)
-                        preprocessor = ImageStacking(
-                            clean_name, data_manager, date_obs, cfg.results_dir
-                        )
+                        preprocessor = ImageStacking(clean_name, data_manager, date_obs)
                         preprocessor.stack_images()
                         print(f"Cleaning up temporary folder: {clean_name} ")
                         shutil.rmtree(clean_name)
@@ -134,8 +132,7 @@ def main(
 
                     image = fits.getdata(fits_path)
                     header = fits.getheader(fits_path)
-                    results = detector.run(image, header, output_dir)
-                    print(f"{filename}: {results}")
+                    detector.run(image, header, output_dir)
 
             else:
                 print(
@@ -149,7 +146,7 @@ def main(
     if run_streaks:
         print("Running streak detection on directory...")
         detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
-        results = detector.run()
+        detector.run()
 
 
 if __name__ == "__main__":
