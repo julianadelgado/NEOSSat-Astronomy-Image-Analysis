@@ -100,7 +100,7 @@ def main(
         if filename.endswith(".fits"):
             file_path = os.path.join(cfg.data_dir, filename)
             data_manager = DataManager(file_path)
-            if True or data_manager.is_fits_correct_mode():
+            if data_manager.is_fits_correct_mode():
                 # TODO verify order of call operations
                 if run_image_stacking:
                     print("Running image stacking...")
