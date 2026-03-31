@@ -15,6 +15,11 @@ def email_service(monkeypatch):
 
 
 @pytest.fixture
+def notification_service(email_service):
+    return email_service
+
+
+@pytest.fixture
 def make_fake_satellite():
     """Factory fixture that builds a mock satellite like a skyfield EarthSatellite."""
 

@@ -37,13 +37,13 @@ Or use make commands directly:
 
 ## Email Setup
 
-Analysis results are sent via SMTP. Before running, set the following environment variables:
+Notifications that the processes have finished are sent via SMTP. Before running, set the following environment variables in a terminal or .env file:
 
 | Variable | Description |
 |---|---|
 | `SMTP_SERVER` | Your provider's SMTP server (e.g. `smtp.gmail.com`, `smtp.office365.com`) |
 | `SMTP_USER` | Your email address |
-| `SMTP_PASSWORD` | Your app password |
+| `SMTP_PASSWORD` | Your app password as a 16 character code without spaces|
 | `SMTP_PORT` | Defaults to `587` |
 
 **Generating an App Password:**
@@ -59,11 +59,13 @@ Most providers require an app-specific password rather than your account passwor
 export SMTP_SERVER="smtp.gmail.com"
 export SMTP_USER="you@example.com"
 export SMTP_PASSWORD="your-app-password"
+export SMTP_PORT="587"
 
 # Windows
 set SMTP_SERVER=smtp.gmail.com
 set SMTP_USER=you@example.com
 set SMTP_PASSWORD=your-app-password
+set SMTP_PORT=587
 ```
 
 ## Documentation

@@ -8,6 +8,7 @@ from astropy.io import fits
 from cli.validator import validate_data_directory, validate_email
 from handlers.data_manager import DataManager
 from handlers.fits_handler import FitsHandler
+from services.email_service import EmailService
 from tasks.stacking.image_stacking import ImageStacking
 from tasks.stars.star_detection import StarDetection
 from tasks.streaks.dl_streak_detector import DLStreakDetector
@@ -15,6 +16,7 @@ from tasks.streaks.dl_streak_detector import DLStreakDetector
 from .config import load_config
 
 app = typer.Typer()
+svc = EmailService()
 
 
 @app.command()
@@ -147,6 +149,15 @@ def main(
         print("Running streak detection on directory...")
         detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
         detector.run()
+
+    completed_tasks = []
+    if run_image_stacking:
+        completed_tasks.append("image_stacking")
+    if run_stars:
+        completed_tasks.append("stars")
+    if run_streaks:
+        completed_tasks.append("streaks")
+    svc.send_completion_notification(cfg.email, completed_tasks)
 
 
 if __name__ == "__main__":

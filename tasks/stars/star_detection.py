@@ -20,9 +20,6 @@ matplotlib.use("Agg")
 
 from matplotlib import pyplot as plt  # noqa: E402
 
-# flake8 doesn't like the non-top-level import but we need
-# to set the backend before importing pyplot - AB 16/03/2026
-
 SIGMA = 3.0
 DAO_FINDER_FWHM = 3.0
 DAO_FINDER_THRESHOLD = 5.0

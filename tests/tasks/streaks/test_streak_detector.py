@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -13,6 +14,9 @@ def test_streak_detector_neos_sci_2024239174545_cord():
 
     # Initialize the detector
     detector = DLStreakDetector(data_dir=str(data_dir), clean_results=True)
+
+    detector.satellite_db = MagicMock()
+    detector.satellite_db.correlate_streak_with_satellite.return_value = None
 
     # Run inference
     result = detector.run()

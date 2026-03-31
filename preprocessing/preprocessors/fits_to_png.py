@@ -30,9 +30,7 @@ class FitsToPng(IPreprocessor):
         if max_val != 0:
             img_data /= max_val
 
-        # Configure matplotlib backend and import pyplot locally to avoid
-        # module-level side-effects that trigger flake8 E402.
-        import matplotlib as _matplotlib
+        import matplotlib as _matplotlib  # noqa: E402
 
         _matplotlib.use("Agg")
         import matplotlib.pyplot as plt
