@@ -30,7 +30,7 @@ class FitsToPng(IPreprocessor):
         if max_val != 0:
             img_data /= max_val
 
-        import matplotlib as _matplotlib    #noqa: E402
+        import matplotlib as _matplotlib  # noqa: E402
 
         _matplotlib.use("Agg")
         import matplotlib.pyplot as plt
