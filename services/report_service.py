@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import markdown
-from weasyprint import HTML
+from xhtml2pdf import pisa
 
 
 @dataclass
@@ -93,8 +93,7 @@ class ReportService:
             body {{ font-family: sans-serif; margin: 2em; }}
         </style></head><body>{body}</body></html>
         """
-        HTML(string=html, base_url=markdown_path.parent.resolve().as_uri()).write_pdf(
-            pdf_path
-        )
+        with open(pdf_path, "wb") as f:
+            pisa.CreatePDF(html, dest=f)
         print(f"PDF report generated: {pdf_path.absolute()}")
         return pdf_path
