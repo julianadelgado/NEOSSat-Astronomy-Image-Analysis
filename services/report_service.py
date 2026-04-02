@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Optional
 
 import markdown
-from xhtml2pdf import pisa
+from fpdf import FPDF
 
 
 @dataclass
@@ -67,7 +67,7 @@ class ReportService:
             lines += [section.content, ""]
 
         for image in section.images:
-            lines += [f"![{image.stem}](file://{image.absolute().as_posix()})", ""]
+            lines += [f"![{image.stem}]({image.absolute().as_posix()})", ""]
 
         for table in section.tables:
             lines.append("| " + " | ".join(table.headers) + " |")
@@ -87,13 +87,10 @@ class ReportService:
         body = markdown.markdown(
             markdown_path.read_text(encoding="utf-8"), extensions=["tables"]
         )
-        html = f"""
-        <html><head><style>
-            img {{ max-width: 100%; height: auto; display: block; margin: 1em 0; }}
-            body {{ font-family: sans-serif; margin: 2em; }}
-        </style></head><body>{body}</body></html>
-        """
-        with open(pdf_path, "wb") as f:
-            pisa.CreatePDF(html, dest=f)
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_margins(20, 20, 20)
+        pdf.write_html(body)
+        pdf.output(str(pdf_path))
         print(f"PDF report generated: {pdf_path.absolute()}")
         return pdf_path
