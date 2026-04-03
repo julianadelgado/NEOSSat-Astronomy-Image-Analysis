@@ -1,9 +1,27 @@
+import struct
+import zlib
 from unittest.mock import MagicMock
 
 import pytest
 
 from services.email_service import EmailService
 from services.report_service import ReportData, ReportSection, ReportService
+
+
+def _make_minimal_png() -> bytes:
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        payload = tag + data
+        return (
+            struct.pack(">I", len(data))
+            + payload
+            + struct.pack(">I", zlib.crc32(payload) & 0xFFFFFFFF)
+        )
+
+    sig = b"\x89PNG\r\n\x1a\n"
+    ihdr = chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+    idat = chunk(b"IDAT", zlib.compress(b"\x00\xff\xff\xff"))
+    iend = chunk(b"IEND", b"")
+    return sig + ihdr + idat + iend
 
 
 @pytest.fixture
@@ -49,7 +67,7 @@ def report_service(tmp_path):
 @pytest.fixture
 def sample_image(tmp_path):
     image = tmp_path / "test_image.png"
-    image.write_bytes(b"")
+    image.write_bytes(_make_minimal_png())
     return image
 
 
