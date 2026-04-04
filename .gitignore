@@ -21,3 +21,5 @@ big_streaks
 satellite_f
 mini_satellite_f
 .projectile
+.coverage
+.agent-shell
