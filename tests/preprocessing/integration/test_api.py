@@ -1,6 +1,8 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import numpy as np
+from astropy.io import fits
 from fastapi.testclient import TestClient
 
 
@@ -198,3 +200,67 @@ def test_streak_detection_endpoint_uses_global_detector(monkeypatch):
     assert payload["status"] == "ok"
     assert payload["results"] == {"streaks": [{"id": 1}]}
     fake_detector.run.assert_called_once()
+
+
+def test_preprocessing_runs_star_streak_and_image_stacking_together(
+    tmp_path, monkeypatch
+):
+    from api import main
+
+    client = TestClient(main.app)
+
+    # Create a valid FITS file so the endpoint can read image/header for star detection.
+    fits_file = tmp_path / "all_ops.fits"
+    fits.PrimaryHDU(np.zeros((16, 16), dtype=np.float32)).writeto(fits_file)
+
+    fake_star_detector = SimpleNamespace(
+        run=MagicMock(return_value={"stars_detected": 7})
+    )
+    fake_streak_runner = SimpleNamespace(run=MagicMock(return_value={"streaks": [{"id": 2}]}))
+    fake_streak_module = SimpleNamespace(
+        DLStreakDetector=MagicMock(return_value=fake_streak_runner)
+    )
+    fake_data_manager = MagicMock()
+    fake_stacker = MagicMock()
+    fake_stacker.stack_images = MagicMock()
+
+    monkeypatch.setattr(main, "StarDetection", MagicMock(return_value=fake_star_detector))
+    monkeypatch.setattr(main, "dl_streak_detector", fake_streak_module)
+    monkeypatch.setattr(main, "DataManager", MagicMock(return_value=fake_data_manager))
+    monkeypatch.setattr(main, "ImageStacking", MagicMock(return_value=fake_stacker))
+
+    response = client.post(
+        "/preprocessing",
+        json={
+            "fits_file": str(fits_file),
+            "run_star_detection": True,
+            "run_streak_detection": True,
+            "run_image_stacking": True,
+            "images_path": "data/",
+            "date_obs": "2024-01-15",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+
+    assert payload["status"] == "ok"
+    assert payload["results"]["star_detection"] == {"stars_detected": 7}
+    assert payload["results"]["streak_detection"] == {"streaks": [{"id": 2}]}
+    assert payload["results"]["image_stacking"] == {
+        "status": "completed",
+        "date_obs": "2024-01-15",
+        "images_path": "data/",
+    }
+
+    main.StarDetection.assert_called_once()
+    fake_star_detector.run.assert_called_once()
+    main.dl_streak_detector.DLStreakDetector.assert_called_once()
+    fake_streak_runner.run.assert_called_once()
+    main.DataManager.assert_called_once_with(file_path=str(fits_file))
+    main.ImageStacking.assert_called_once_with(
+        images_path="data/",
+        data_manager=fake_data_manager,
+        date_obs="2024-01-15",
+    )
+    fake_stacker.stack_images.assert_called_once()
