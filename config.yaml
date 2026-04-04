@@ -1,4 +1,8 @@
-email: user@example.com
 data_dir: ./data
 results_dir: ./results
 reports_dir: ./reports
+wrong_mode_dir: ./wrong_mode
+smtp_user: 
+smtp_server: 
+smtp_port: 587
+smtp_password: 

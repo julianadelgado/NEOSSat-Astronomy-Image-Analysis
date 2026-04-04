@@ -1,4 +1,3 @@
-import os
 import smtplib
 from email.mime.text import MIMEText
 
@@ -10,11 +9,11 @@ TASK_LABELS = {
 
 
 class EmailService:
-    def __init__(self):
-        self.smtp_server = os.environ["SMTP_SERVER"]
-        self.smtp_port = int(os.environ.get("SMTP_PORT", 587))
-        self.username = os.environ["SMTP_USER"]
-        self.password = os.environ["SMTP_PASSWORD"]
+    def __init__(self, smtp_server, smtp_port, username, password):
+        self.smtp_server = smtp_server
+        self.smtp_port = int(smtp_port)
+        self.username = username
+        self.password = password
 
     def send_email(self, to_email, subject, body):
         msg = MIMEText(body)
