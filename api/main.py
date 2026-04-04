@@ -38,7 +38,7 @@ def run_preprocessing(req: PreprocessRequest):
         else:
             raise HTTPException(
                 status_code=404,
-                detail=f"File {req.fits_file} not found in current directory or project root."
+                detail=f"File {req.fits_file} not found in current directory or project root.",
             )
     else:
         fits_path = req_path
@@ -70,57 +70,53 @@ def run_preprocessing(req: PreprocessRequest):
             with fits.open(fits_path) as hdul:
                 image_data = hdul[0].data
                 header = hdul[0].header
-                
+
                 star_detector = StarDetection()
                 star_results = star_detector.run(
                     image=image_data,
                     header=header,
-                    output_dir=Path("results") / "star_detection"
+                    output_dir=Path("results") / "star_detection",
                 )
                 results["star_detection"] = star_results
         except Exception as e:
             raise HTTPException(
-                status_code=500,
-                detail=f"Star detection failed: {str(e)}"
+                status_code=500, detail=f"Star detection failed: {str(e)}"
             )
 
     # Run image stacking if requested
     if req.run_image_stacking:
         if not req.images_path:
             raise HTTPException(
-                status_code=400,
-                detail="images_path is required for image stacking"
+                status_code=400, detail="images_path is required for image stacking"
             )
         if not req.date_obs:
             raise HTTPException(
-                status_code=400,
-                detail="date_obs is required for image stacking"
+                status_code=400, detail="date_obs is required for image stacking"
             )
-        
+
         try:
             data_manager = DataManager(file_path=str(fits_path))
             stacker = ImageStacking(
                 images_path=req.images_path,
                 data_manager=data_manager,
-                date_obs=req.date_obs
+                date_obs=req.date_obs,
             )
             stacker.stack_images()
             results["image_stacking"] = {
                 "status": "completed",
                 "date_obs": req.date_obs,
-                "images_path": req.images_path
+                "images_path": req.images_path,
             }
         except Exception as e:
             raise HTTPException(
-                status_code=500,
-                detail=f"Image stacking failed: {str(e)}"
+                status_code=500, detail=f"Image stacking failed: {str(e)}"
             )
 
     # If nothing was requested, return an error
     if not results:
         raise HTTPException(
             status_code=400,
-            detail="No processing requested. Please specify at least one of: preprocessors, run_streak_detection, run_star_detection, or run_image_stacking"
+            detail="No processing requested. Please specify at least one of: preprocessors, run_streak_detection, run_star_detection, or run_image_stacking",
         )
 
     return {"status": "ok", "results": results}

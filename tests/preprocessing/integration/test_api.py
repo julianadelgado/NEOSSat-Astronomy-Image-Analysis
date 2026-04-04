@@ -190,7 +190,9 @@ def test_streak_detection_endpoint_uses_global_detector(monkeypatch):
     from api import main
 
     client = TestClient(main.app)
-    fake_detector = SimpleNamespace(run=MagicMock(return_value={"streaks": [{"id": 1}]}))
+    fake_detector = SimpleNamespace(
+        run=MagicMock(return_value={"streaks": [{"id": 1}]})
+    )
     monkeypatch.setattr(main, "dl_streak_detector", fake_detector)
 
     response = client.post("/streak-detection")
@@ -216,7 +218,9 @@ def test_preprocessing_runs_star_streak_and_image_stacking_together(
     fake_star_detector = SimpleNamespace(
         run=MagicMock(return_value={"stars_detected": 7})
     )
-    fake_streak_runner = SimpleNamespace(run=MagicMock(return_value={"streaks": [{"id": 2}]}))
+    fake_streak_runner = SimpleNamespace(
+        run=MagicMock(return_value={"streaks": [{"id": 2}]})
+    )
     fake_streak_module = SimpleNamespace(
         DLStreakDetector=MagicMock(return_value=fake_streak_runner)
     )
@@ -224,7 +228,9 @@ def test_preprocessing_runs_star_streak_and_image_stacking_together(
     fake_stacker = MagicMock()
     fake_stacker.stack_images = MagicMock()
 
-    monkeypatch.setattr(main, "StarDetection", MagicMock(return_value=fake_star_detector))
+    monkeypatch.setattr(
+        main, "StarDetection", MagicMock(return_value=fake_star_detector)
+    )
     monkeypatch.setattr(main, "dl_streak_detector", fake_streak_module)
     monkeypatch.setattr(main, "DataManager", MagicMock(return_value=fake_data_manager))
     monkeypatch.setattr(main, "ImageStacking", MagicMock(return_value=fake_stacker))
