@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -18,6 +19,7 @@ class ReportSection:
     title: str
     content: str = ""
     images: List[Path] = field(default_factory=list)
+    stacking_details: Optional[List[str]] = field(default_factory=list)
     tables: List[ReportTable] = field(default_factory=list)
     subsections: List["ReportSection"] = field(default_factory=list)
 
@@ -76,6 +78,12 @@ class ReportService:
                 lines.append("| " + " | ".join(str(cell) for cell in row) + " |")
             lines.append("")
 
+        if section.stacking_details and len(section.stacking_details) > 0:
+            lines += ["**OBS_ID of Stacked Images:**", ""]
+            for detail in section.stacking_details:
+                lines += [f"- {detail}"]
+            lines.append("")
+
         for subsection in section.subsections:
             lines.extend(self._render_section(subsection, level + 1))
 
@@ -87,9 +95,10 @@ class ReportService:
         body = markdown.markdown(
             markdown_path.read_text(encoding="utf-8"), extensions=["tables"]
         )
+        body = re.sub(r"<img (.*?)>", r'<img \1 width="500">', body)
         pdf = FPDF()
-        pdf.add_page()
         pdf.set_margins(20, 20, 20)
+        pdf.add_page()
         pdf.write_html(body)
         pdf.output(str(pdf_path))
         print(f"PDF report generated: {pdf_path.absolute()}")

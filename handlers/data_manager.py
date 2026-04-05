@@ -23,7 +23,7 @@ class DataManager:
         if self.fits_image is None:
             return False
         try:
-            allowed_modes = ["16 - FINE_POINT", "14 - FINE_SLEW"]
+            allowed_modes = ["16 - FINE_POINT", "14 - FINE_SLEW", "13 - FINE_SLEW"]
             header = self.fits_image[0].header
             mode = header.get("MODE")
             if mode in allowed_modes:

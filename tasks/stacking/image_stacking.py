@@ -51,10 +51,10 @@ class ImageStacking:
                         print(f"Error aligning image {img_name}: {e}")
         except Exception as e:
             print(f"Error opening FITS file {img_name}: {e}")
-        return reference_data, data_arrays
+        return reference_data, data_arrays, img_name
 
     def get_images_correct_mode(self):
-        allowed_modes = ["16 - FINE_POINT", "14 - FINE_SLEW"]
+        allowed_modes = ["16 - FINE_POINT", "14 - FINE_SLEW", "13 - FINE_SLEW"]
         all_images = [f for f in os.listdir(self.images_path) if f.endswith(".fits")]
         correct_mode_images = []
         for img_name in all_images:
@@ -69,16 +69,27 @@ class ImageStacking:
                 print(f"Error checking mode for image {img_name}: {e}")
         return correct_mode_images
 
+    def get_observation_ids(self, img_path, img_name):
+        try:
+            with fits.open(img_path) as img_fits:
+                header = img_fits[0].header
+                obs_id = header.get("OBS_ID")
+                return obs_id
+        except Exception as e:
+            print(f"Error retrieving OBS_ID for image {img_name}: {e}")
+            return img_name
+
     def stack_images(self):
         PERCENTILE_LOWER_BOUND = 40
         PERCENTILE_UPPER_BOUND = 99.9
         original_image_path = self.data_manager.file_path
         all_images = self.get_images_correct_mode()
+        stacked_images = []
 
         data_arrays = []
         reference_data = None
 
-        reference_data, data_arrays = self.align_images(
+        reference_data, data_arrays, _ = self.align_images(
             original_image_path,
             os.path.basename(original_image_path),
             reference_data,
@@ -87,9 +98,10 @@ class ImageStacking:
 
         for img_name in all_images:
             img_path = os.path.join(self.images_path, img_name)
-            reference_data, data_arrays = self.align_images(
+            reference_data, data_arrays, curr_img_name = self.align_images(
                 img_path, img_name, reference_data, data_arrays
             )
+            stacked_images.append(self.get_observation_ids(img_path, curr_img_name))
 
         if len(data_arrays) > 1:
             print(f"Stacking {len(all_images)} images for {self.date_obs}...")
@@ -110,11 +122,11 @@ class ImageStacking:
             output_path = os.path.join(self.results_dir, f"stacked_{self.date_obs}.png")
             stacked_image.save(output_path)
             print(f"Stacked image saved: {output_path}")
-            self._generate_report()
+            self._generate_report(stacked_images)
         else:
             print(f"Only one image for date {self.date_obs}, skipping stacking.")
 
-    def _generate_report(self):
+    def _generate_report(self, stacked_images):
         report_service = ReportService(reports_dir=REPORTS_DIR)
         report_service.generate(
             ReportData(
@@ -130,6 +142,7 @@ class ImageStacking:
                             ]
                             if p.exists()
                         ],
+                        stacking_details=stacked_images,
                     )
                 ],
             )
