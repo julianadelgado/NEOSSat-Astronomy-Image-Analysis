@@ -3,12 +3,12 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI, HTTPException
 
-from api.preprocess_request import PreprocessRequest
-from preprocessing.metrics import Metrics
-from preprocessing.pipeline import Pipeline
-from preprocessing.preprocessors.fits_to_png import FitsToPng
-from preprocessing.preprocessors.image_stacking import ImageStackingPreprocessor
-from preprocessing.preprocessors.streak_detection import StreakDetectionPreprocessor
+from api.process_request import ProcessRequest
+from processing.metrics import Metrics
+from processing.pipeline import Pipeline
+from processing.processors.fits_to_png import FitsToPng
+from processing.processors.image_stacking import ImageStackingProcessor
+from processing.processors.streak_detection import StreakDetectionProcessor
 from tasks.stars.star_detection import StarDetection
 from tasks.stars.star_detection_legacy import StarDetectionLegacy
 from tasks.streaks import dl_streak_detector
@@ -18,12 +18,12 @@ app = FastAPI()
 metrics = Metrics()
 
 pipeline = Pipeline(
-    preprocessors=[
+    processors=[
         StarDetection(),
         StarDetectionLegacy(),
         FitsToPng(),
-        StreakDetectionPreprocessor(),
-        ImageStackingPreprocessor(),
+        StreakDetectionProcessor(),
+        ImageStackingProcessor(),
     ],
     metrics=metrics,
 )
@@ -31,8 +31,8 @@ pipeline = Pipeline(
 dl_streak_detector = dl_streak_detector.DLStreakDetector()
 
 
-@app.post("/preprocessing")
-def run_preprocessing(req: PreprocessRequest):
+@app.post("/processing")
+def run_processing(req: ProcessRequest):
     req_path = Path(req.fits_file)
 
     if not req_path.exists():
@@ -48,7 +48,7 @@ def run_preprocessing(req: PreprocessRequest):
     else:
         fits_path = req_path
 
-    selected = list(req.preprocessors or [])
+    selected = list(req.processors or req.processors or [])
 
     if req.run_star_detection:
         selected.append("star_detection")
@@ -66,14 +66,14 @@ def run_preprocessing(req: PreprocessRequest):
             status_code=400, detail="date_obs is required for image stacking"
         )
 
-    # Keep user order while removing duplicate preprocessors.
+    # Keep user order while removing duplicate processors.
     selected = list(dict.fromkeys(selected))
 
     # If nothing was requested, return an error
     if not selected:
         raise HTTPException(
             status_code=400,
-            detail="No processing requested. Please specify at least one of: preprocessors, run_streak_detection, run_star_detection, or run_image_stacking",
+            detail="No processing requested. Please specify at least one of: processors, run_streak_detection, run_star_detection, or run_image_stacking",
         )
 
     try:
@@ -115,14 +115,14 @@ def run_streak_detection():
 def health():
     return {
         "status": "running",
-        "average_preprocessing_time_sec": metrics.average_time(),
+        "average_processing_time_sec": metrics.average_time(),
     }
 
 
 @app.get("/catalog")
 def catalog():
-    """List all available preprocessors"""
-    return {"available_preprocessors": list(pipeline.preprocessors.keys())}
+    """List all available processors"""
+    return {"available_processors": list(pipeline.processors.keys())}
 
 
 def start():

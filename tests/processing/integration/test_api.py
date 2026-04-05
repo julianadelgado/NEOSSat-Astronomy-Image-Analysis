@@ -16,7 +16,7 @@ def test_health_endpoint():
     payload = response.json()
 
     assert payload["status"] == "running"
-    assert "average_preprocessing_time_sec" in payload
+    assert "average_processing_time_sec" in payload
 
 
 def test_catalog_endpoint():
@@ -27,24 +27,24 @@ def test_catalog_endpoint():
 
     assert response.status_code == 200
     payload = response.json()
-    assert "available_preprocessors" in payload
-    assert isinstance(payload["available_preprocessors"], list)
+    assert "available_processors" in payload
+    assert isinstance(payload["available_processors"], list)
 
 
-def test_preprocessing_returns_404_for_missing_file():
+def test_processing_returns_404_for_missing_file():
     from api import main
 
     client = TestClient(main.app)
     response = client.post(
-        "/preprocessing",
-        json={"fits_file": "does/not/exist.fits", "preprocessors": ["star_detection"]},
+        "/processing",
+        json={"fits_file": "does/not/exist.fits", "processors": ["star_detection"]},
     )
 
     assert response.status_code == 404
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_preprocessing_requires_at_least_one_operation(tmp_path):
+def test_processing_requires_at_least_one_operation(tmp_path):
     from api import main
 
     client = TestClient(main.app)
@@ -52,7 +52,7 @@ def test_preprocessing_requires_at_least_one_operation(tmp_path):
     fits_file.write_bytes(b"")
 
     response = client.post(
-        "/preprocessing",
+        "/processing",
         json={"fits_file": str(fits_file)},
     )
 
@@ -60,7 +60,7 @@ def test_preprocessing_requires_at_least_one_operation(tmp_path):
     assert "No processing requested" in response.json()["detail"]
 
 
-def test_run_preprocessing_endpoint(tmp_path):
+def test_run_processing_endpoint(tmp_path):
     from fastapi.testclient import TestClient
 
     from api import main
@@ -75,8 +75,8 @@ def test_run_preprocessing_endpoint(tmp_path):
     with patch(pipeline_path) as mock_pipeline:
         mock_pipeline.run.return_value = {"star_detection": {"stars_detected": 5}}
 
-        payload = {"fits_file": str(fits_file), "preprocessors": ["star_detection"]}
-        response = client.post("/preprocessing", json=payload)
+        payload = {"fits_file": str(fits_file), "processors": ["star_detection"]}
+        response = client.post("/processing", json=payload)
 
     assert response.status_code == 200
     data = response.json()
@@ -85,7 +85,7 @@ def test_run_preprocessing_endpoint(tmp_path):
     mock_pipeline.run.assert_called_once()
 
 
-def test_run_preprocessing_star_detection(tmp_path):
+def test_run_processing_star_detection(tmp_path):
     from api import main
 
     client = TestClient(main.app)
@@ -101,10 +101,10 @@ def test_run_preprocessing_star_detection(tmp_path):
 
         payload = {
             "fits_file": str(fits_file),
-            "preprocessors": ["star_detection"],
+            "processors": ["star_detection"],
         }
 
-        response = client.post("/preprocessing", json=payload)
+        response = client.post("/processing", json=payload)
 
     assert response.status_code == 200
 
@@ -123,7 +123,7 @@ def test_run_preprocessing_star_detection(tmp_path):
     assert "output_dir" in kwargs
 
 
-def test_preprocessing_pipeline_results_are_nested_under_pipeline(tmp_path):
+def test_processing_pipeline_results_are_nested_under_pipeline(tmp_path):
     from api import main
 
     client = TestClient(main.app)
@@ -135,8 +135,8 @@ def test_preprocessing_pipeline_results_are_nested_under_pipeline(tmp_path):
     main.pipeline.run = mock_run
 
     response = client.post(
-        "/preprocessing",
-        json={"fits_file": str(fits_file), "preprocessors": ["star_detection"]},
+        "/processing",
+        json={"fits_file": str(fits_file), "processors": ["star_detection"]},
     )
 
     assert response.status_code == 200
@@ -146,7 +146,7 @@ def test_preprocessing_pipeline_results_are_nested_under_pipeline(tmp_path):
     mock_run.assert_called_once()
 
 
-def test_preprocessing_image_stacking_requires_images_path(tmp_path):
+def test_processing_image_stacking_requires_images_path(tmp_path):
     from api import main
 
     client = TestClient(main.app)
@@ -154,7 +154,7 @@ def test_preprocessing_image_stacking_requires_images_path(tmp_path):
     fits_file.write_bytes(b"")
 
     response = client.post(
-        "/preprocessing",
+        "/processing",
         json={
             "fits_file": str(fits_file),
             "run_image_stacking": True,
@@ -166,7 +166,7 @@ def test_preprocessing_image_stacking_requires_images_path(tmp_path):
     assert "images_path is required" in response.json()["detail"]
 
 
-def test_preprocessing_image_stacking_requires_date_obs(tmp_path):
+def test_processing_image_stacking_requires_date_obs(tmp_path):
     from api import main
 
     client = TestClient(main.app)
@@ -174,7 +174,7 @@ def test_preprocessing_image_stacking_requires_date_obs(tmp_path):
     fits_file.write_bytes(b"")
 
     response = client.post(
-        "/preprocessing",
+        "/processing",
         json={
             "fits_file": str(fits_file),
             "run_image_stacking": True,
@@ -204,7 +204,7 @@ def test_streak_detection_endpoint_uses_global_detector(monkeypatch):
     fake_detector.run.assert_called_once()
 
 
-def test_preprocessing_runs_star_streak_and_image_stacking_together(tmp_path):
+def test_processing_runs_star_streak_and_image_stacking_together(tmp_path):
     from api import main
 
     client = TestClient(main.app)
@@ -227,7 +227,7 @@ def test_preprocessing_runs_star_streak_and_image_stacking_together(tmp_path):
         }
 
         response = client.post(
-            "/preprocessing",
+            "/processing",
             json={
                 "fits_file": str(fits_file),
                 "run_star_detection": True,

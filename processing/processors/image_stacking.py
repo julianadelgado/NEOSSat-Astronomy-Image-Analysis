@@ -3,11 +3,11 @@ from pathlib import Path
 import numpy as np
 
 from handlers.data_manager import DataManager
-from preprocessing.core.preprocessor import IPreprocessor
+from processing.core.processor import IProcessor
 from tasks.stacking.image_stacking import ImageStacking
 
 
-class ImageStackingPreprocessor(IPreprocessor):
+class ImageStackingProcessor(IProcessor):
     def name(self) -> str:
         return "image_stacking"
 

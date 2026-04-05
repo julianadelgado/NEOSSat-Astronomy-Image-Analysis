@@ -2,13 +2,13 @@
 skinparam classAttributeIconSize 0
 
 class FastAPIApp {
-    +run_preprocessing(req: PreprocessRequest)
+    +run_processing(req: ProcessRequest)
     +health()
     +catalog()
 }
 
 class Pipeline {
-    -preprocessors: Dict<String, IPreprocessor>
+    -processors: Dict<String, IProcessor>
     -metrics: Metrics
     +run(fits_path: Path, selected: List<String>, output_dir: Path) : Dict
 }
@@ -22,24 +22,24 @@ class Metrics {
 
 package Core {
 
-	interface IPreprocessor {
+	interface IProcessor {
 		+name() : str
 		+run(image, header, output_dir: Path) : dict
 	}
 
-	class PreprocessRequest {
+	class ProcessRequest {
 		-fits_file: str
-		-preprocessors: List<String>
+		-processors: List<String>
 	}
 }
 
-package Preprocessors {
-	class StarDetectionPreprocessor {
+package Processors {
+	class StarDetectionProcessor {
 		+name() : str
 		+run(image, header, output_dir: Path) : dict
 	}
 
-	class FitsToPngPreprocessor {
+	class FitsToPngProcessor {
 		+name() : str
 		+run(image, header, output_dir: Path) : dict
 	}
@@ -48,10 +48,10 @@ package Preprocessors {
 
 
 FastAPIApp --> Pipeline
-Pipeline --> IPreprocessor : uses
-IPreprocessor <|-- StarDetectionPreprocessor
-IPreprocessor <|-- FitsToPngPreprocessor
+Pipeline --> IProcessor : uses
+IProcessor <|-- StarDetectionProcessor
+IProcessor <|-- FitsToPngProcessor
 Pipeline --> Metrics : uses
-FastAPIApp --> PreprocessRequest : accepts
+FastAPIApp --> ProcessRequest : accepts
 
 @enduml

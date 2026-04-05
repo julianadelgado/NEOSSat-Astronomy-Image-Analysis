@@ -2,11 +2,11 @@ from pathlib import Path
 
 import numpy as np
 
-from preprocessing.core.preprocessor import IPreprocessor
+from processing.core.processor import IProcessor
 from tasks.streaks import dl_streak_detector
 
 
-class StreakDetectionPreprocessor(IPreprocessor):
+class StreakDetectionProcessor(IProcessor):
     def name(self) -> str:
         return "streak_detection"
 

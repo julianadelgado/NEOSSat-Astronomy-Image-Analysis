@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 sys.path.append(str(Path(__file__).parent / "dl_streak_detect"))
 from cli.config import load_config
-from preprocessing.preprocessors.fits_to_png import FitsToPng
+from processing.processors.fits_to_png import FitsToPng
 from services.report_service import (
     ReportData,
     ReportSection,
@@ -333,7 +333,7 @@ class DLStreakDetector:
     def run(self) -> Dict[str, Any]:
         """
         Run the DL Streak Detector.
-        Checks the data folder, runs preprocessors, outputs into inference_data,
+        Checks the data folder, runs processors, outputs into inference_data,
         then runs inference and outputs results to result_data.
         Optionally correlates streaks with satellites if correlate_satellite=True.
         """
@@ -354,7 +354,7 @@ class DLStreakDetector:
             print(msg)
             return {"error": msg, "streaks": []}
 
-        # Initialize preprocessor
+        # Initialize processor
         fits_to_png = FitsToPng()
 
         for file_path in files:
@@ -371,7 +371,7 @@ class DLStreakDetector:
                         # Store metadata for WCS processing
                         self._store_fits_metadata(file_path, header, data)
 
-                        # Use FitsToPng preprocessor
+                        # Use FitsToPng processor
                         fits_to_png.run(
                             data,
                             header,

@@ -2,10 +2,10 @@ from pathlib import Path
 
 import numpy as np
 
-from preprocessing.core.preprocessor import IPreprocessor
+from processing.core.processor import IProcessor
 
 
-class FitsToPng(IPreprocessor):
+class FitsToPng(IProcessor):
     """Converts a FITS file to a normalized (0-1) PNG for visualization."""
 
     def name(self) -> str:

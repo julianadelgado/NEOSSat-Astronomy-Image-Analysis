@@ -4,14 +4,14 @@ from typing import Dict, List
 
 from astropy.io import fits
 
-from preprocessing.core.preprocessor import IPreprocessor
-from preprocessing.metrics import Metrics
+from processing.core.processor import IProcessor
+from processing.metrics import Metrics
 
 
 class Pipeline:
 
-    def __init__(self, preprocessors: List[IPreprocessor], metrics: Metrics):
-        self.preprocessors = {p.name(): p for p in preprocessors}
+    def __init__(self, processors: List[IProcessor], metrics: Metrics):
+        self.processors = {p.name(): p for p in processors}
         self.metrics = metrics
 
     def run(
@@ -23,24 +23,22 @@ class Pipeline:
     ) -> Dict:
 
         for name in selected:
-            if name not in self.preprocessors:
+            if name not in self.processors:
                 raise ValueError(f"Pré-traitement inconnu: {name}")
 
         image = fits.getdata(fits_path)
         header = fits.getheader(fits_path)
-        preprocessor_kwargs = {"fits_path": fits_path, **kwargs}
+        processor_kwargs = {"fits_path": fits_path, **kwargs}
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
         results = {}
 
         for name in selected:
-            preprocessor = self.preprocessors[name]
+            processor = self.processors[name]
 
             start = time.perf_counter()
-            metadata = preprocessor.run(
-                image, header, output_dir, **preprocessor_kwargs
-            )
+            metadata = processor.run(image, header, output_dir, **processor_kwargs)
             duration = time.perf_counter() - start
 
             self.metrics.register(duration)

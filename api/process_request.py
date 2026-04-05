@@ -3,9 +3,10 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class PreprocessRequest(BaseModel):
+class ProcessRequest(BaseModel):
     fits_file: str
-    preprocessors: Optional[list[str]] = None
+    processors: Optional[list[str]] = None
+
     run_streak_detection: bool = False
     run_star_detection: bool = False
     run_image_stacking: bool = False
