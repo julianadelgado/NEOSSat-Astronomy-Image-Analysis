@@ -258,16 +258,10 @@ class DLStreakDetector:
     def _generate_report(
         self, results_summary: List[Dict[str, Any]], result_dir: Path
     ) -> None:
-        has_content = any(len(res.get("detections", [])) > 0 for res in results_summary)
-        if not has_content:
-            return
-
         sections = []
         for res in results_summary:
             stem = res["file"]
             dets = res.get("detections", [])
-            if not dets:
-                continue
 
             img_path = None
             for ext in [".png", ".jpg", ".jpeg"]:
@@ -275,6 +269,16 @@ class DLStreakDetector:
                 if candidate.exists():
                     img_path = candidate
                     break
+
+            if not dets:
+                sections.append(
+                    ReportSection(
+                        title=f"File: {stem}",
+                        content="No streaks found",
+                        images=[img_path] if img_path else [],
+                    )
+                )
+                continue
 
             detection_subsections = []
             for i, det in enumerate(dets):
@@ -308,6 +312,8 @@ class DLStreakDetector:
                             ]
                         ],
                     )
+                else:
+                    content_lines.append("- Unknown origin of streak")
 
                 detection_subsections.append(
                     ReportSection(
@@ -324,6 +330,9 @@ class DLStreakDetector:
                     subsections=detection_subsections,
                 )
             )
+
+        if not sections:
+            sections.append(ReportSection(title="Summary", content="No streaks found"))
 
         report_service = ReportService(REPORTS_DIR)
         report_service.generate(
