@@ -19,6 +19,7 @@ class Pipeline:
         fits_path: Path,
         selected: List[str],
         output_dir: Path,
+        **kwargs,
     ) -> Dict:
 
         for name in selected:
@@ -27,6 +28,7 @@ class Pipeline:
 
         image = fits.getdata(fits_path)
         header = fits.getheader(fits_path)
+        preprocessor_kwargs = {"fits_path": fits_path, **kwargs}
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -36,7 +38,9 @@ class Pipeline:
             preprocessor = self.preprocessors[name]
 
             start = time.perf_counter()
-            metadata = preprocessor.run(image, header, output_dir)
+            metadata = preprocessor.run(
+                image, header, output_dir, **preprocessor_kwargs
+            )
             duration = time.perf_counter() - start
 
             self.metrics.register(duration)

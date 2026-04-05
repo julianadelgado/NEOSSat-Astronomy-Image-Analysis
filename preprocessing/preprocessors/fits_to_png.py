@@ -17,6 +17,7 @@ class FitsToPng(IPreprocessor):
         header,
         output_dir: Path,
         filename: str = "image_normalisee.png",
+        **kwargs,
     ) -> dict:
         """
         Generates a normalized PNG from the original FITS image data.

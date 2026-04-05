@@ -28,7 +28,7 @@ class StarDetectionLegacy(IPreprocessor):
     def name(self) -> str:
         return "star_detection_legacy"
 
-    def run(self, image: np.ndarray, header, output_dir: Path) -> dict:
+    def run(self, image: np.ndarray, header, output_dir: Path, **kwargs) -> dict:
         wcs = WCS(header)
 
         mean, median, std = sigma_clipped_stats(image, sigma=3.0)

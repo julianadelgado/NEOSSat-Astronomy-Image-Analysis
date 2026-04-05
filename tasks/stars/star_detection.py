@@ -54,7 +54,7 @@ class StarDetection(IPreprocessor):
     def name(self) -> str:
         return "star_detection"
 
-    def run(self, image: np.ndarray, header, output_dir: Path) -> dict:
+    def run(self, image: np.ndarray, header, output_dir: Path, **kwargs) -> dict:
 
         wcs = WCS(header)
 

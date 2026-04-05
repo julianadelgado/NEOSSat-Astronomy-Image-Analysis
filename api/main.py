@@ -1,15 +1,14 @@
 from pathlib import Path
 
 import uvicorn
-from astropy.io import fits
 from fastapi import FastAPI, HTTPException
 
 from api.preprocess_request import PreprocessRequest
-from handlers.data_manager import DataManager
 from preprocessing.metrics import Metrics
 from preprocessing.pipeline import Pipeline
 from preprocessing.preprocessors.fits_to_png import FitsToPng
-from tasks.stacking.image_stacking import ImageStacking
+from preprocessing.preprocessors.image_stacking import ImageStackingPreprocessor
+from preprocessing.preprocessors.streak_detection import StreakDetectionPreprocessor
 from tasks.stars.star_detection import StarDetection
 from tasks.stars.star_detection_legacy import StarDetectionLegacy
 from tasks.streaks import dl_streak_detector
@@ -19,7 +18,13 @@ app = FastAPI()
 metrics = Metrics()
 
 pipeline = Pipeline(
-    preprocessors=[StarDetection(), StarDetectionLegacy(), FitsToPng()],
+    preprocessors=[
+        StarDetection(),
+        StarDetectionLegacy(),
+        FitsToPng(),
+        StreakDetectionPreprocessor(),
+        ImageStackingPreprocessor(),
+    ],
     metrics=metrics,
 )
 
@@ -43,81 +48,57 @@ def run_preprocessing(req: PreprocessRequest):
     else:
         fits_path = req_path
 
-    results = {}
+    selected = list(req.preprocessors or [])
 
-    # Run standard preprocessing pipeline if preprocessors are specified
-    if req.preprocessors:
-        pipeline_results = pipeline.run(
-            fits_path=fits_path,
-            selected=req.preprocessors,
-            output_dir=Path("results"),
-        )
-        results["pipeline"] = pipeline_results
-
-    # Run streak detection if requested
-    if req.run_streak_detection:
-        streak_detector = dl_streak_detector.DLStreakDetector(
-            conf_thres=req.streak_detection_conf_threshold,
-            iou_thres=req.streak_detection_iou_threshold,
-            data_dir=str(fits_path.parent),
-        )
-        streak_results = streak_detector.run()
-        results["streak_detection"] = streak_results
-
-    # Run star detection if requested
     if req.run_star_detection:
-        try:
-            with fits.open(fits_path) as hdul:
-                image_data = hdul[0].data
-                header = hdul[0].header
-
-                star_detector = StarDetection()
-                star_results = star_detector.run(
-                    image=image_data,
-                    header=header,
-                    output_dir=Path("results") / "star_detection",
-                )
-                results["star_detection"] = star_results
-        except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Star detection failed: {str(e)}"
-            )
-
-    # Run image stacking if requested
+        selected.append("star_detection")
+    if req.run_streak_detection:
+        selected.append("streak_detection")
     if req.run_image_stacking:
-        if not req.images_path:
-            raise HTTPException(
-                status_code=400, detail="images_path is required for image stacking"
-            )
-        if not req.date_obs:
-            raise HTTPException(
-                status_code=400, detail="date_obs is required for image stacking"
-            )
+        selected.append("image_stacking")
 
-        try:
-            data_manager = DataManager(file_path=str(fits_path))
-            stacker = ImageStacking(
-                images_path=req.images_path,
-                data_manager=data_manager,
-                date_obs=req.date_obs,
-            )
-            stacker.stack_images()
-            results["image_stacking"] = {
-                "status": "completed",
-                "date_obs": req.date_obs,
-                "images_path": req.images_path,
-            }
-        except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Image stacking failed: {str(e)}"
-            )
+    if req.run_image_stacking and not req.images_path:
+        raise HTTPException(
+            status_code=400, detail="images_path is required for image stacking"
+        )
+    if req.run_image_stacking and not req.date_obs:
+        raise HTTPException(
+            status_code=400, detail="date_obs is required for image stacking"
+        )
+
+    # Keep user order while removing duplicate preprocessors.
+    selected = list(dict.fromkeys(selected))
 
     # If nothing was requested, return an error
-    if not results:
+    if not selected:
         raise HTTPException(
             status_code=400,
             detail="No processing requested. Please specify at least one of: preprocessors, run_streak_detection, run_star_detection, or run_image_stacking",
         )
+
+    try:
+        pipeline_results = pipeline.run(
+            fits_path=fits_path,
+            selected=selected,
+            output_dir=Path("results"),
+            streak_detection_conf_threshold=req.streak_detection_conf_threshold,
+            streak_detection_iou_threshold=req.streak_detection_iou_threshold,
+            images_path=req.images_path,
+            date_obs=req.date_obs,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+
+    results = {"pipeline": pipeline_results}
+
+    if req.run_star_detection and "star_detection" in pipeline_results:
+        results["star_detection"] = pipeline_results["star_detection"]
+    if req.run_streak_detection and "streak_detection" in pipeline_results:
+        results["streak_detection"] = pipeline_results["streak_detection"]
+    if req.run_image_stacking and "image_stacking" in pipeline_results:
+        results["image_stacking"] = pipeline_results["image_stacking"]
 
     return {"status": "ok", "results": results}
 
