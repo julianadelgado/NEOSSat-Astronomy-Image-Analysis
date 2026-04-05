@@ -8,7 +8,12 @@ from PIL import Image
 
 from cli.config import load_config
 from handlers.data_manager import DataManager
-from services.report_service import ReportData, ReportSection, ReportService
+from services.report_service import (
+    ReportData,
+    ReportSection,
+    ReportService,
+    ReportTable,
+)
 
 config = load_config(None)
 
@@ -106,6 +111,11 @@ class ImageStacking:
 
     def _generate_report(self, stacked_images):
         report_service = ReportService(reports_dir=REPORTS_DIR)
+        stacking_table = ReportTable(
+            headers=["Observation IDs"],
+            rows=[[obs_id] for obs_id in stacked_images],
+        )
+
         report_service.generate(
             ReportData(
                 task_name="Image Stacking",
@@ -120,7 +130,7 @@ class ImageStacking:
                             ]
                             if p.exists()
                         ],
-                        stacking_details=stacked_images,
+                        tables=[stacking_table],
                     )
                 ],
             )

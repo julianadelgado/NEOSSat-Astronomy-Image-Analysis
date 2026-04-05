@@ -19,7 +19,6 @@ class ReportSection:
     title: str
     content: str = ""
     images: List[Path] = field(default_factory=list)
-    stacking_details: Optional[List[str]] = field(default_factory=list)
     tables: List[ReportTable] = field(default_factory=list)
     subsections: List["ReportSection"] = field(default_factory=list)
 
@@ -76,12 +75,6 @@ class ReportService:
             lines.append("| " + " | ".join(["---"] * len(table.headers)) + " |")
             for row in table.rows:
                 lines.append("| " + " | ".join(str(cell) for cell in row) + " |")
-            lines.append("")
-
-        if section.stacking_details and len(section.stacking_details) > 0:
-            lines += ["**OBS_ID of Stacked Images:**", ""]
-            for detail in section.stacking_details:
-                lines += [f"- {detail}"]
             lines.append("")
 
         for subsection in section.subsections:
