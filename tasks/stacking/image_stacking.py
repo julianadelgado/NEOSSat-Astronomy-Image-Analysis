@@ -7,7 +7,13 @@ from astropy.io import fits
 from PIL import Image
 
 from cli.config import load_config
-from services.report_service import ReportData, ReportSection, ReportService
+from handlers.data_manager import DataManager
+from services.report_service import (
+    ReportData,
+    ReportSection,
+    ReportService,
+    ReportTable,
+)
 
 config = load_config(None)
 
@@ -51,34 +57,19 @@ class ImageStacking:
                         print(f"Error aligning image {img_name}: {e}")
         except Exception as e:
             print(f"Error opening FITS file {img_name}: {e}")
-        return reference_data, data_arrays
-
-    def get_images_correct_mode(self):
-        allowed_modes = ["16 - FINE_POINT", "14 - FINE_SLEW"]
-        all_images = [f for f in os.listdir(self.images_path) if f.endswith(".fits")]
-        correct_mode_images = []
-        for img_name in all_images:
-            img_path = os.path.join(self.images_path, img_name)
-            try:
-                with fits.open(img_path) as img_fits:
-                    header = img_fits[0].header
-                    mode = header.get("MODE")
-                    if mode in allowed_modes:
-                        correct_mode_images.append(img_name)
-            except Exception as e:
-                print(f"Error checking mode for image {img_name}: {e}")
-        return correct_mode_images
+        return reference_data, data_arrays, img_name
 
     def stack_images(self):
         PERCENTILE_LOWER_BOUND = 40
         PERCENTILE_UPPER_BOUND = 99.9
         original_image_path = self.data_manager.file_path
-        all_images = self.get_images_correct_mode()
+        all_images = [f for f in os.listdir(self.images_path) if f.endswith(".fits")]
+        stacked_images = []
 
         data_arrays = []
         reference_data = None
 
-        reference_data, data_arrays = self.align_images(
+        reference_data, data_arrays, _ = self.align_images(
             original_image_path,
             os.path.basename(original_image_path),
             reference_data,
@@ -87,12 +78,16 @@ class ImageStacking:
 
         for img_name in all_images:
             img_path = os.path.join(self.images_path, img_name)
-            reference_data, data_arrays = self.align_images(
+            img_data_manager = DataManager(img_path)
+            if not img_data_manager.is_fits_correct_mode():
+                continue
+            reference_data, data_arrays, curr_img_name = self.align_images(
                 img_path, img_name, reference_data, data_arrays
             )
+            stacked_images.append(img_data_manager.get_observation_ids(curr_img_name))
 
         if len(data_arrays) > 1:
-            print(f"Stacking {len(all_images)} images for {self.date_obs}...")
+            print(f"Stacking {len(stacked_images)} images for {self.date_obs}...")
 
             stacked_data = np.nanmax(data_arrays, axis=0)
 
@@ -110,12 +105,17 @@ class ImageStacking:
             output_path = os.path.join(self.results_dir, f"stacked_{self.date_obs}.png")
             stacked_image.save(output_path)
             print(f"Stacked image saved: {output_path}")
-            self._generate_report()
+            self._generate_report(stacked_images)
         else:
             print(f"Only one image for date {self.date_obs}, skipping stacking.")
 
-    def _generate_report(self):
+    def _generate_report(self, stacked_images):
         report_service = ReportService(reports_dir=REPORTS_DIR)
+        stacking_table = ReportTable(
+            headers=["Observation IDs"],
+            rows=[[obs_id] for obs_id in stacked_images],
+        )
+
         report_service.generate(
             ReportData(
                 task_name="Image Stacking",
@@ -130,6 +130,7 @@ class ImageStacking:
                             ]
                             if p.exists()
                         ],
+                        tables=[stacking_table],
                     )
                 ],
             )
