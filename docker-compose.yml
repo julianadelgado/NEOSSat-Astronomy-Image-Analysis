@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  neossat-app:
+    build:
+      context: .
+      dockerfile: docker/application/Dockerfile
+    container_name: neossat-app
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
