@@ -40,9 +40,9 @@ class ReportService:
         if filename is None:
             ts = data.timestamp.strftime("%Y%m%d_%H%M%S")
             slug = data.task_name.lower().replace(" ", "_")
-            filename = f"{slug}_report_{ts}.md"
+            filename = f"{slug}_report_{ts}.pdf"
 
-        output_path = self.reports_dir / filename
+        pdf_path = self.reports_dir / filename
 
         lines = [
             f"# {data.task_name} Report",
@@ -53,8 +53,8 @@ class ReportService:
         for section in data.sections:
             lines.extend(self._render_section(section, level=2))
 
-        self.create_pdf(output_path, lines)
-        return output_path
+        self.create_pdf(pdf_path, lines)
+        return pdf_path
 
     def _render_section(self, section: ReportSection, level: int) -> List[str]:
         heading = "#" * level
@@ -79,8 +79,7 @@ class ReportService:
         lines += ["---", ""]
         return lines
 
-    def create_pdf(self, markdown_path: Path, lines: List[str]) -> Path:
-        pdf_path = markdown_path.with_suffix(".pdf")
+    def create_pdf(self, pdf_path: Path, lines: List[str]) -> Path:
         body = markdown.markdown("\n".join(lines), extensions=["tables"])
         body = re.sub(r"<img (.*?)>", r'<img \1 width="500">', body)
         pdf = FPDF()
