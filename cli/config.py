@@ -7,7 +7,10 @@ import yaml
 
 @dataclass
 class Config:
-    email: str = ""
+    smtp_user: str = ""
+    smtp_server: str = ""
+    smtp_port: int = 587
+    smtp_password: str = ""
     data_dir: str = "./data"
     results_dir: str = "./results"
     reports_dir: str = "./reports"

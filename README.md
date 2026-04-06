@@ -37,14 +37,14 @@ Or use make commands directly:
 
 ## Email Setup
 
-Notifications that the processes have finished are sent via SMTP. Before running, set the following environment variables in a terminal or .env file:
+Notifications that the processes have finished are sent via SMTP. Before running, set the following variables in the `config.yaml` file:
 
 | Variable | Description |
 |---|---|
-| `SMTP_SERVER` | Your provider's SMTP server (e.g. `smtp.gmail.com`, `smtp.office365.com`) |
-| `SMTP_USER` | Your email address |
-| `SMTP_PASSWORD` | Your app password as a 16 character code without spaces|
-| `SMTP_PORT` | Defaults to `587` |
+| `smtp_server` | Your provider's SMTP server (e.g. `smtp.gmail.com`, `smtp.office365.com`) |
+| `smtp_user` | Your email address |
+| `smtp_password` | Your app password as a 16 character code without spaces|
+| `smtp_port` | Defaults to `587` |
 
 **Generating an App Password:**
 
@@ -52,22 +52,6 @@ Most providers require an app-specific password rather than your account passwor
 - **Gmail:** Google Account → Security → 2-Step Verification → App passwords
 - **Outlook:** Microsoft Account → Security → Advanced security options → App passwords
 
-**Setting the variables:**
-
-```bash
-# macOS/Linux
-export SMTP_SERVER="smtp.gmail.com"
-export SMTP_USER="you@example.com"
-export SMTP_PASSWORD="your-app-password"
-export SMTP_PORT="587"
-
-# Windows
-set SMTP_SERVER=smtp.gmail.com
-set SMTP_USER=you@example.com
-set SMTP_PASSWORD=your-app-password
-set SMTP_PORT=587
-```
-
 ## Documentation
 
-For more details, see the [wiki](wiki/).
+For more details, see the [Wiki](https://github.com/julianadelgado/NEOSSat-Astronomy-Image-Analysis/wiki).

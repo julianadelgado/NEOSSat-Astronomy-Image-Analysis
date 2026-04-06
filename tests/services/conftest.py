@@ -26,10 +26,13 @@ def _make_minimal_png() -> bytes:
 
 @pytest.fixture
 def email_service(monkeypatch):
-    monkeypatch.setenv("SMTP_SERVER", "smtp.gmail.com")
-    monkeypatch.setenv("SMTP_USER", "sender@gmail.com")
-    monkeypatch.setenv("SMTP_PASSWORD", "password")
-    return EmailService()
+    smtp_server = "smtp.gmail.com"
+    smtp_user = "sender@gmail.com"
+    smtp_password = "password"
+    monkeypatch.setenv("smtp_server", smtp_server)
+    monkeypatch.setenv("smtp_user", smtp_user)
+    monkeypatch.setenv("smtp_password", smtp_password)
+    return EmailService(smtp_server, 587, smtp_user, smtp_password)
 
 
 @pytest.fixture

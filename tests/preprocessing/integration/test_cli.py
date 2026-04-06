@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 
 from typer.testing import CliRunner
 
-os.environ.setdefault("SMTP_SERVER", "smtp.test")
-os.environ.setdefault("SMTP_USER", "test@test.com")
-os.environ.setdefault("SMTP_PASSWORD", "test_password")
+os.environ.setdefault("smtp_server", "smtp.test")
+os.environ.setdefault("smtp_user", "test@test.com")
+os.environ.setdefault("smtp_password", "test_password")
 
 from cli.main import app  # noqa: E402
 
@@ -160,7 +160,8 @@ def test_notification_sent_after_tasks_complete(
         data_dir="/fake", results_dir="/fake/results", email="test@example.com"
     )
 
-    with patch("cli.main.svc.send_completion_notification") as mock_notify:
+    with patch("cli.main.EmailService") as mock_email_service:
+        mock_svc = mock_email_service.return_value
         with (
             patch("cli.main.DLStreakDetector"),
             patch("cli.main.StarDetection"),
@@ -173,7 +174,7 @@ def test_notification_sent_after_tasks_complete(
             )
 
     assert result.exit_code == 0
-    mock_notify.assert_called_once_with(
+    mock_svc.send_completion_notification.assert_called_once_with(
         "test@example.com", ["image_stacking", "stars", "streaks"]
     )
 
@@ -192,7 +193,8 @@ def test_notification_sent_with_stars_flag(
         data_dir="/fake", results_dir="/fake/results", email="test@example.com"
     )
 
-    with patch("cli.main.svc.send_completion_notification") as mock_notify:
+    with patch("cli.main.EmailService") as mock_email_service:
+        mock_svc = mock_email_service.return_value
         with (
             patch("cli.main.StarDetection"),
             patch("cli.main.fits.getdata", return_value=MagicMock()),
@@ -204,7 +206,9 @@ def test_notification_sent_with_stars_flag(
             )
 
     assert result.exit_code == 0
-    mock_notify.assert_called_once_with("test@example.com", ["stars"])
+    mock_svc.send_completion_notification.assert_called_once_with(
+        "test@example.com", ["stars"]
+    )
 
 
 @patch("cli.main.DataManager")
@@ -221,7 +225,8 @@ def test_notification_sent_with_streaks_flag(
         data_dir="/fake", results_dir="/fake/results", email="test@example.com"
     )
 
-    with patch("cli.main.svc.send_completion_notification") as mock_notify:
+    with patch("cli.main.EmailService") as mock_email_service:
+        mock_svc = mock_email_service.return_value
         with patch("cli.main.DLStreakDetector"):
             result = runner.invoke(
                 app,
@@ -229,7 +234,26 @@ def test_notification_sent_with_streaks_flag(
             )
 
     assert result.exit_code == 0
-    mock_notify.assert_called_once_with("test@example.com", ["streaks"])
+    mock_svc.send_completion_notification.assert_called_once_with(
+        "test@example.com", ["streaks"]
+    )
+
+
+@patch("cli.main.DLStreakDetector")
+@patch("cli.main.DataManager")
+@listdir_patch
+@patch("cli.main.load_config")
+@valid_dir_patch
+def test_no_prompt_when_config_has_data_dir_and_email(
+    mock_exists, mock_config, mock_listdir, mock_data_manager, mock_streak_detector
+):
+    mock_config.return_value = MagicMock(
+        data_dir="/from/config", results_dir="/fake/results", email="config@example.com"
+    )
+
+    result = runner.invoke(app, ["--streaks"])
+
+    assert result.exit_code == 0
 
 
 @patch("cli.main.DataManager")
@@ -248,7 +272,8 @@ def test_notification_sent_with_image_stacking_flag(
     mock_data_manager.return_value.get_coordinates.return_value = MagicMock()
     mock_data_manager.return_value.get_images_same_date.return_value = MagicMock()
 
-    with patch("cli.main.svc.send_completion_notification") as mock_notify:
+    with patch("cli.main.EmailService") as mock_email_service:
+        mock_svc = mock_email_service.return_value
         with (
             patch("cli.main.ImageStacking"),
             patch("cli.main.FitsHandler"),
@@ -267,4 +292,6 @@ def test_notification_sent_with_image_stacking_flag(
             )
 
     assert result.exit_code == 0
-    mock_notify.assert_called_once_with("test@example.com", ["image_stacking"])
+    mock_svc.send_completion_notification.assert_called_once_with(
+        "test@example.com", ["image_stacking"]
+    )
