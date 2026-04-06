@@ -53,11 +53,7 @@ class ReportService:
         for section in data.sections:
             lines.extend(self._render_section(section, level=2))
 
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(lines))
-
-        print(f"Report generated: {output_path.absolute()}")
-        self.pdf_transform(output_path)
+        self.create_pdf(output_path, lines)
         return output_path
 
     def _render_section(self, section: ReportSection, level: int) -> List[str]:
@@ -83,11 +79,9 @@ class ReportService:
         lines += ["---", ""]
         return lines
 
-    def pdf_transform(self, markdown_path: Path) -> Path:
+    def create_pdf(self, markdown_path: Path, lines: List[str]) -> Path:
         pdf_path = markdown_path.with_suffix(".pdf")
-        body = markdown.markdown(
-            markdown_path.read_text(encoding="utf-8"), extensions=["tables"]
-        )
+        body = markdown.markdown("\n".join(lines), extensions=["tables"])
         body = re.sub(r"<img (.*?)>", r'<img \1 width="500">', body)
         pdf = FPDF()
         pdf.set_margins(20, 20, 20)
