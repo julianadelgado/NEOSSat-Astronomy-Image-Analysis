@@ -4,10 +4,10 @@ from pathlib import Path
 import astropy.units as units
 import matplotlib
 import numpy as np
-from matplotlib.lines import Line2D
 from astropy.coordinates import SkyCoord
 from astropy.stats import sigma_clipped_stats
 from astropy.wcs import WCS
+from matplotlib.lines import Line2D
 from photutils.detection import DAOStarFinder
 
 from cli.config import load_config
@@ -364,14 +364,29 @@ class StarDetection(IPreprocessor):
                 linewidth=1.5,
             )
 
-        seen_groups = {map_to_group(c.get("otype", "Default")) for c in matched_candidates}
+        seen_groups = {
+            map_to_group(c.get("otype", "Default")) for c in matched_candidates
+        }
         legend_elements = [
-            Line2D([0], [0], marker=info["marker"], color=info["color"],
-                   label=group, markersize=8, fillstyle="none", linewidth=0)
+            Line2D(
+                [0],
+                [0],
+                marker=info["marker"],
+                color=info["color"],
+                label=group,
+                markersize=8,
+                fillstyle="none",
+                linewidth=0,
+            )
             for group, info in TYPE_SYMBOLS.items()
             if group in seen_groups
         ]
-        ax.legend(handles=legend_elements, facecolor="black", labelcolor="white", loc="upper right")
+        ax.legend(
+            handles=legend_elements,
+            facecolor="black",
+            labelcolor="white",
+            loc="upper right",
+        )
 
         plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
@@ -440,14 +455,29 @@ class StarDetection(IPreprocessor):
                 linewidth=1.5,
             )
 
-        seen_groups = {map_to_group(getattr(obj, "otype", "Default")) for obj in region_catalog}
+        seen_groups = {
+            map_to_group(getattr(obj, "otype", "Default")) for obj in region_catalog
+        }
         legend_elements = [
-            Line2D([0], [0], marker=info["marker"], color=info["color"],
-                   label=group, markersize=8, fillstyle="none", linewidth=0)
+            Line2D(
+                [0],
+                [0],
+                marker=info["marker"],
+                color=info["color"],
+                label=group,
+                markersize=8,
+                fillstyle="none",
+                linewidth=0,
+            )
             for group, info in TYPE_SYMBOLS.items()
             if group in seen_groups
         ]
-        ax.legend(handles=legend_elements, facecolor="black", labelcolor="white", loc="upper right")
+        ax.legend(
+            handles=legend_elements,
+            facecolor="black",
+            labelcolor="white",
+            loc="upper right",
+        )
 
         plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)
         plt.close(fig)
