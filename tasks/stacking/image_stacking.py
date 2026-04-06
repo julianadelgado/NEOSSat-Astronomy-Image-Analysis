@@ -24,7 +24,7 @@ RESULTS_DIR = Path(config.results_dir)
 class ImageStacking:
     def __init__(self, images_path, data_manager, date_obs):
         self.images_path = images_path
-        self.original_data_manager = data_manager
+        self.data_manager = data_manager
         self.date_obs = date_obs
         self.results_dir = RESULTS_DIR
 
@@ -43,7 +43,7 @@ class ImageStacking:
                     before_path = os.path.join(
                         self.results_dir, f"before_{self.date_obs}.png"
                     )
-                    self.original_data_manager.fits_to_png(before_path)
+                    self.data_manager.fits_to_png(before_path)
 
                     reference_data = current_data
                     data_arrays.append(current_data)
@@ -62,7 +62,7 @@ class ImageStacking:
     def stack_images(self):
         PERCENTILE_LOWER_BOUND = 40
         PERCENTILE_UPPER_BOUND = 99.9
-        original_image_path = self.original_data_manager.file_path
+        original_image_path = self.data_manager.file_path
         all_images = [f for f in os.listdir(self.images_path) if f.endswith(".fits")]
         stacked_images = []
 
