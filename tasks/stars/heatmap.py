@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 import numpy as np
 
 
@@ -18,7 +19,7 @@ def generate_heatmap(
 
     plt.figure(figsize=(10, 8))
 
-    plt.imshow(heatmap.T, origin="lower", cmap="inferno", interpolation="nearest")
+    plt.imshow(heatmap.T, origin="lower", cmap="inferno", interpolation="nearest", norm=LogNorm())
 
     plt.colorbar(label="value")
     plt.title(title)

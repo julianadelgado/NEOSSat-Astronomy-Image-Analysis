@@ -20,7 +20,7 @@ def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
         result = custom_simbad.query_region(coord, radius=radius)
 
         if result is None or len(result) == 0:
-            print(f"Aucun objet trouvé pour {coord_string}")
+            print(f"No object found for {coord_string}")
             return None
 
         obj_coords = SkyCoord(ra=result["ra"], dec=result["dec"], unit=units.deg)
@@ -54,12 +54,12 @@ def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
                         obj.otype,
                     ]
                 )
-            print(f"Résultat SIMBAD exporté vers {output_csv_path}")
+            print(f"SIMBAD results exported to {output_csv_path}")
 
         return obj
 
     except Exception as e:
-        print(f"Erreur pour {coord_string}: {e}")
+        print(f"Error for {coord_string}: {e}")
         import traceback
 
         traceback.print_exc()
@@ -72,7 +72,7 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
         result = custom_simbad.query_region(center, radius=radius)
 
         if result is None or len(result) == 0:
-            print("Aucun objet trouvé dans la région.")
+            print("No object found in the region.")
             return []
 
         obj_coords = SkyCoord(ra=result["ra"], dec=result["dec"], unit=units.deg)
@@ -95,12 +95,12 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
                     writer.writerow(
                         [obj.object_id, obj.otype, obj.coord.ra.deg, obj.coord.dec.deg]
                     )
-            print(f"Résultats SIMBAD exportés vers {output_csv_path}")
+            print(f"SIMBAD results exported to {output_csv_path}")
 
         return objects
 
     except Exception as e:
-        print(f"Erreur query_simbad_skycoord: {e}")
+        print(f"Error in query_simbad_skycoord: {e}")
         import traceback
 
         traceback.print_exc()
