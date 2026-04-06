@@ -128,6 +128,13 @@ def archive_results():
         if os.path.isfile(f_path):
             shutil.move(f_path, os.path.join(target_folder, f))
 
+    all_folders = [
+        os.path.join(Config.RESULTS_FOLDER, d)
+        for d in os.listdir(Config.RESULTS_FOLDER)
+        if os.path.isdir(os.path.join(Config.RESULTS_FOLDER, d))
+    ]
+    all_folders.sort(key=lambda x: os.path.getctime(x))  # tri par date de création
+
 
 def write_metrics(write_api, stars_detected: int, status: str, avg_time: float):
     point = (
@@ -161,6 +168,11 @@ def process_single_observation(obs_id: str, write_api):
 
     except (requests.RequestException, KeyError) as e:
         print(f"[PROCESSING ERROR] {fits_file}: {e}")
+
+    finally:
+        if os.path.exists(fits_file):
+            os.remove(fits_file)
+            print(f"[CLEANUP] Deleted source FITS file: {fits_file}")
 
 
 def run():
