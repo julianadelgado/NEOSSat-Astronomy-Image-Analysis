@@ -16,7 +16,6 @@ from tasks.streaks.dl_streak_detector import DLStreakDetector
 from .config import load_config
 
 app = typer.Typer()
-svc = EmailService()
 
 
 @app.command()
@@ -60,31 +59,25 @@ def main(
     ),
 ):
     print("Welcome to the NEOSSat Astronomy Image Analysis!")
+
     cfg = load_config(None)
-
-    # Check raw config to see if keys were explicitly provided
-    config_keys = {}
-    default_config = Path("config.yaml")
-    if default_config.exists():
-        import yaml
-
-        with open(default_config) as f:
-            config_keys = yaml.safe_load(f) or {}
 
     if data_dir:
         cfg.data_dir = data_dir
-    elif "data_dir" not in config_keys:
-        cfg.data_dir = typer.prompt(
-            "Enter the path to the data directory", default=cfg.data_dir
-        )
+    elif not cfg.data_dir:
+        cfg.data_dir = typer.prompt("Enter the path to the data directory")
 
     if email:
-        cfg.email = email
-    elif "email" not in config_keys:
-        cfg.email = typer.prompt(
-            "Enter a valid email address to receive results",
-            default=cfg.email if cfg.email else None,
-        )
+        cfg.smtp_user = email
+    elif not cfg.smtp_user:
+        cfg.smtp_user = typer.prompt("Enter a valid email address to receive results")
+    if not cfg.smtp_server:
+        cfg.smtp_server = typer.prompt("Enter the SMTP server address")
+    if not cfg.smtp_password:
+        cfg.smtp_password = typer.prompt("Enter the SMTP password", hide_input=True)
+
+    svc = EmailService(cfg.smtp_server, cfg.smtp_port, cfg.smtp_user, cfg.smtp_password)
+
     if results_dir:
         cfg.results_dir = results_dir
     if reports_dir:
@@ -157,7 +150,7 @@ def main(
         completed_tasks.append("stars")
     if run_streaks:
         completed_tasks.append("streaks")
-    svc.send_completion_notification(cfg.email, completed_tasks)
+    svc.send_completion_notification(cfg.smtp_user, completed_tasks)
 
 
 if __name__ == "__main__":

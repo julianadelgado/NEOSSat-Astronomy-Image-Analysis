@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -87,9 +88,10 @@ class ReportService:
         body = markdown.markdown(
             markdown_path.read_text(encoding="utf-8"), extensions=["tables"]
         )
+        body = re.sub(r"<img (.*?)>", r'<img \1 width="500">', body)
         pdf = FPDF()
-        pdf.add_page()
         pdf.set_margins(20, 20, 20)
+        pdf.add_page()
         pdf.write_html(body)
         pdf.output(str(pdf_path))
         print(f"PDF report generated: {pdf_path.absolute()}")

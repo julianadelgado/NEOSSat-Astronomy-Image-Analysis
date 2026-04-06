@@ -23,11 +23,10 @@ class DataManager:
         if self.fits_image is None:
             return False
         try:
-            allowed_modes = ["16 - FINE_POINT", "14 - FINE_SLEW"]
+            allowed_modes = ["16 - FINE_POINT", "14 - FINE_SLEW", "13 - FINE_SLEW"]
             header = self.fits_image[0].header
             mode = header.get("MODE")
             if mode in allowed_modes:
-                print("FITS image is in the correct mode for analysis.")
                 return True
             else:
                 print(
@@ -101,3 +100,14 @@ class DataManager:
             print(f"FITS image converted to PNG and saved at: {output_path}")
         except Exception as e:
             print(f"Error converting FITS to PNG: {e}")
+
+    def get_observation_ids(self, img_name):
+        if self.fits_image is None:
+            return None
+        try:
+            header = self.fits_image[0].header
+            obs_id = header.get("OBS_ID")
+            return obs_id if obs_id is not None else img_name
+        except Exception as e:
+            print(f"Error retrieving OBS_ID for image {img_name}: {e}")
+            return img_name
