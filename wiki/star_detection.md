@@ -9,7 +9,7 @@ Star detection identifies point sources in NEOSSat images and cross-references t
 ```bash
 make stars
 neossat-cli --stars
-POST /preprocessing
+POST /processing
 ```
 
 ## Output

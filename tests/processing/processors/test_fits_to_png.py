@@ -2,15 +2,15 @@ from pathlib import Path
 
 import numpy as np
 
-from preprocessing.preprocessors.fits_to_png import FitsToPng
+from processing.processors.fits_to_png import FitsToPng
 
 
 def test_fits_to_png_creates_png(tmp_path):
     image = np.array([[0, 1], [2, 3]], dtype=float)
     header = {}
 
-    preprocessor = FitsToPng()
-    result = preprocessor.run(image, header, tmp_path)
+    processor = FitsToPng()
+    result = processor.run(image, header, tmp_path)
 
     png_path = Path(result["png_saved"])
 

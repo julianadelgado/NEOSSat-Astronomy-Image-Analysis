@@ -1,4 +1,4 @@
-# Image Preprocessing
+# Image Processing
 
 [Back to wiki](./sidebar.md)
 
@@ -14,4 +14,4 @@ Start the server.
 
 ## Architecture
 
-![UML Class Diagram](/preprocessing/docs/class.png)
+![UML Class Diagram](/processing/docs/class.png)

@@ -1,12 +1,14 @@
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
-from api.preprocess_request import PreprocessRequest
-from preprocessing.metrics import Metrics
-from preprocessing.pipeline import Pipeline
-from preprocessing.preprocessors.fits_to_png import FitsToPng
+from api.process_request import ProcessRequest
+from processing.metrics import Metrics
+from processing.pipeline import Pipeline
+from processing.processors.fits_to_png import FitsToPng
+from processing.processors.image_stacking import ImageStackingProcessor
+from processing.processors.streak_detection import StreakDetectionProcessor
 from tasks.stars.star_detection import StarDetection
 from tasks.stars.star_detection_legacy import StarDetectionLegacy
 from tasks.streaks import dl_streak_detector
@@ -16,15 +18,21 @@ app = FastAPI()
 metrics = Metrics()
 
 pipeline = Pipeline(
-    preprocessors=[StarDetection(), StarDetectionLegacy(), FitsToPng()],
+    processors=[
+        StarDetection(),
+        StarDetectionLegacy(),
+        FitsToPng(),
+        StreakDetectionProcessor(),
+        ImageStackingProcessor(),
+    ],
     metrics=metrics,
 )
 
 dl_streak_detector = dl_streak_detector.DLStreakDetector()
 
 
-@app.post("/preprocessing")
-def run_preprocessing(req: PreprocessRequest):
+@app.post("/processing")
+def run_processing(req: ProcessRequest):
     req_path = Path(req.fits_file)
 
     if not req_path.exists():
@@ -33,17 +41,65 @@ def run_preprocessing(req: PreprocessRequest):
         if candidate.exists():
             fits_path = candidate
         else:
-            raise FileNotFoundError(
-                f"File {req.fits_file} not found in current directory or project root."
+            raise HTTPException(
+                status_code=404,
+                detail=f"File {req.fits_file} not found in current directory or project root.",
             )
     else:
         fits_path = req_path
 
-    results = pipeline.run(
-        fits_path=fits_path,
-        selected=req.preprocessors,
-        output_dir=Path("results"),
-    )
+    selected = list(req.processors or req.processors or [])
+
+    if req.run_star_detection:
+        selected.append("star_detection")
+    if req.run_streak_detection:
+        selected.append("streak_detection")
+    if req.run_image_stacking:
+        selected.append("image_stacking")
+
+    if req.run_image_stacking and not req.images_path:
+        raise HTTPException(
+            status_code=400, detail="images_path is required for image stacking"
+        )
+    if req.run_image_stacking and not req.date_obs:
+        raise HTTPException(
+            status_code=400, detail="date_obs is required for image stacking"
+        )
+
+    # Keep user order while removing duplicate processors.
+    selected = list(dict.fromkeys(selected))
+
+    # If nothing was requested, return an error
+    if not selected:
+        raise HTTPException(
+            status_code=400,
+            detail="No processing requested. Please specify at least one of: processors, run_streak_detection, run_star_detection, or run_image_stacking",
+        )
+
+    try:
+        pipeline_results = pipeline.run(
+            fits_path=fits_path,
+            selected=selected,
+            output_dir=Path("results"),
+            streak_detection_conf_threshold=req.streak_detection_conf_threshold,
+            streak_detection_iou_threshold=req.streak_detection_iou_threshold,
+            images_path=req.images_path,
+            date_obs=req.date_obs,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+
+    results = {"pipeline": pipeline_results}
+
+    if req.run_star_detection and "star_detection" in pipeline_results:
+        results["star_detection"] = pipeline_results["star_detection"]
+    if req.run_streak_detection and "streak_detection" in pipeline_results:
+        results["streak_detection"] = pipeline_results["streak_detection"]
+    if req.run_image_stacking and "image_stacking" in pipeline_results:
+        results["image_stacking"] = pipeline_results["image_stacking"]
+
     return {"status": "ok", "results": results}
 
 
@@ -59,14 +115,14 @@ def run_streak_detection():
 def health():
     return {
         "status": "running",
-        "average_preprocessing_time_sec": metrics.average_time(),
+        "average_processing_time_sec": metrics.average_time(),
     }
 
 
 @app.get("/catalog")
 def catalog():
-    """List all available preprocessors"""
-    return {"available_preprocessors": list(pipeline.preprocessors.keys())}
+    """List all available processors"""
+    return {"available_processors": list(pipeline.processors.keys())}
 
 
 def start():

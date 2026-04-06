@@ -8,7 +8,7 @@ from astropy.wcs import WCS
 from matplotlib.patches import Circle
 from photutils.detection import DAOStarFinder
 
-from preprocessing.core.preprocessor import IPreprocessor
+from processing.core.processor import IProcessor
 from tasks.stars.heatmap import generate_heatmap
 from tasks.stars.queries import query_simbad
 
@@ -23,12 +23,12 @@ show_acceptance_radius = True  # Debug only - AB 10/03/2026
 # AB 16/03/2026
 
 
-class StarDetectionLegacy(IPreprocessor):
+class StarDetectionLegacy(IProcessor):
 
     def name(self) -> str:
         return "star_detection_legacy"
 
-    def run(self, image: np.ndarray, header, output_dir: Path) -> dict:
+    def run(self, image: np.ndarray, header, output_dir: Path, **kwargs) -> dict:
         wcs = WCS(header)
 
         mean, median, std = sigma_clipped_stats(image, sigma=3.0)
