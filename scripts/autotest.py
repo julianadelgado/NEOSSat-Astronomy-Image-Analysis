@@ -1,11 +1,11 @@
 import csv
-import random
-import requests
-import time
 import os
-import json
+import random
 import shutil
+import time
 from datetime import datetime
+
+import requests
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from influxdb_client.client.write_api import SYNCHRONOUS
 
@@ -26,7 +26,7 @@ client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
 write_api = client.write_api(write_options=SYNCHRONOUS)
 
 obs_ids = []
-with open(CSV_FILE, newline='') as csvfile:
+with open(CSV_FILE, newline="") as csvfile:
     reader = csv.reader(csvfile)
     headers = next(reader)
 
@@ -51,7 +51,7 @@ if not obs_ids:
 
 
 def download_image(obs_id):
-    number_part = obs_id.split('/')[-1]
+    number_part = obs_id.split("/")[-1]
     url = f"https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/raven/files/cadc:NEOSSAT/NEOS_SCI_{number_part}_cord.fits"
 
     try:
@@ -62,7 +62,7 @@ def download_image(obs_id):
         return None
 
     filename = os.path.join(OUTPUT_FOLDER, f"{number_part}.fits")
-    with open(filename, 'wb') as f:
+    with open(filename, "wb") as f:
         f.write(response.content)
 
     print(f"Downloaded : {filename}")
@@ -79,8 +79,8 @@ while True:
                 "http://localhost:8000/preprocessing",
                 json={
                     "fits_file": fits_file_abs,
-                    "preprocessors": ["star_detection", "fits_to_png"]
-                }
+                    "preprocessors": ["star_detection", "fits_to_png"],
+                },
             )
             response.raise_for_status()
             result = response.json()
@@ -102,7 +102,9 @@ while True:
             avg_preprocessing_time = health_data.get("average_preprocessing_time_sec")
 
             print(f"Stars detected: {stars_detected}")
-            print(f"Service status: {service_status}, average preprocessing time: {avg_preprocessing_time:.3f}s")
+            print(
+                f"Service status: {service_status}, average preprocessing time: {avg_preprocessing_time:.3f}s"
+            )
 
             point = (
                 Point("neossat_processing")
