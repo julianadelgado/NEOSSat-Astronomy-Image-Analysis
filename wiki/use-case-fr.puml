@@ -1,0 +1,54 @@
+@startuml use-case-fr
+
+actor Utilisateur
+
+cloud "Base de données" as DB
+cloud "Serveur SMTP" as SMTP
+
+package "NEOSSAT - Analyse d'images astronomiques" {
+
+    usecase "AG1 - Collecter toutes les images FITS d'une même région" as AG1
+    usecase "AG2 - Empiler les images" as AG2
+
+    usecase "AN1 - Identifier la région observée" as AN1
+    usecase "AN2 - Extraire les sources lumineuses d'une image" as AN2
+    usecase "AN3 - Extraire les traînées lumineuses d'une image" as AN3
+
+    usecase "IN1 - Identifier les sources lumineuses" as IN1
+    usecase "IN2 - Identifier les traînées lumineuses" as IN2
+    usecase "IN3 - Lister toutes les sources et traînées non identifiées" as IN3
+
+    usecase "PR1 - Notifier l'utilisateur des résultats de l'analyse" as PR1
+    usecase "PR2 - Générer un rapport PDF des résultats" as PR2
+    usecase "PR3 - Afficher les résultats de détection des traînées" as PR3
+    usecase "PR4 - Afficher les résultats de détection des sources lumineuses" as PR4
+    usecase "PR5 - Afficher les résultats de l'empilement d'images" as PR5
+
+}
+
+Utilisateur --> AG1
+Utilisateur --> AN2
+Utilisateur --> AN3
+
+DB --> AG1
+AG1 --> AG2
+
+AN1 --> IN1
+AN2 --> IN1 
+IN1 --> PR2
+AN3 --> IN2
+IN2 --> PR2
+IN1 --> IN3
+IN2 --> IN3
+IN3 --> PR2
+
+PR2 --> PR1
+PR1 --> SMTP
+PR2 --> PR3
+PR3 --> Utilisateur
+PR2 --> PR4
+PR4 --> Utilisateur
+PR2 --> PR5
+PR5 --> Utilisateur
+
+@enduml
