@@ -4,6 +4,7 @@ from pathlib import Path
 import astropy.units as units
 from astropy.coordinates import SkyCoord
 from astroquery.simbad import Simbad
+import numpy.ma as ma
 
 import tasks.stars.identified_object as identified_object
 
@@ -68,40 +69,64 @@ def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
 def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None):
     try:
         custom_simbad = Simbad()
-        custom_simbad.add_votable_fields("otype")
+        custom_simbad.add_votable_fields("otype", "B", "V", "R")
         result = custom_simbad.query_region(center, radius=radius)
 
         if result is None or len(result) == 0:
-            print("Aucun objet trouvé dans la région.")
+            print("No objects found for this region.")
             return []
 
         obj_coords = SkyCoord(ra=result["ra"], dec=result["dec"], unit=units.deg)
 
         objects = []
-        for i in range(len(result)):
-            otype = result["otype"][i] if "otype" in result.colnames else "Unknown"
-            objects.append(
-                identified_object.IdentifiedObjectSkyCoord(
-                    object_id=result["main_id"][i], coord=obj_coords[i], otype=otype
-                )
-            )
+        csv_rows = []
 
-        if output_csv_path:
+        for i in range(len(result)):
+            mag_b = result["B"][i] if "B" in result.colnames else None
+            mag_v = result["V"][i] if "V" in result.colnames else None
+            mag_r = result["R"][i] if "R" in result.colnames else None
+
+            if all(m is None or ma.is_masked(m) for m in [mag_b, mag_v, mag_r]):
+                continue
+
+            otype = result["otype"][i] if "otype" in result.colnames else "Unknown"
+
+            mag_b_val = None if mag_b is None or ma.is_masked(mag_b) else mag_b
+            mag_v_val = None if mag_v is None or ma.is_masked(mag_v) else mag_v
+            mag_r_val = None if mag_r is None or ma.is_masked(mag_r) else mag_r
+
+            obj = identified_object.IdentifiedObjectSkyCoord(
+                object_id=result["main_id"][i],
+                coord=obj_coords[i],
+                otype=otype,
+                mag_b_val=mag_b_val,
+                mag_v_val=mag_v_val,
+                mag_r_val=mag_r_val
+            )
+            objects.append(obj)
+
+            csv_rows.append([
+                obj.object_id,
+                obj.otype,
+                obj.coord.ra.deg,
+                obj.coord.dec.deg,
+                mag_b_val,
+                mag_v_val,
+                mag_r_val
+            ])
+
+        if output_csv_path and csv_rows:
             output_csv_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_csv_path, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(["main_id", "otype", "ra_deg", "dec_deg"])
-                for obj in objects:
-                    writer.writerow(
-                        [obj.object_id, obj.otype, obj.coord.ra.deg, obj.coord.dec.deg]
-                    )
-            print(f"Résultats SIMBAD exportés vers {output_csv_path}")
+                writer.writerow(["main_id", "otype", "ra_deg", "dec_deg", "mag_b", "mag_v", "mag_r"])
+                writer.writerows(csv_rows)
+            print(f"SIMBAD query results saved as {output_csv_path}")
 
         return objects
 
     except Exception as e:
-        print(f"Erreur query_simbad_skycoord: {e}")
+        print(f"Error query_simbad_skycoord: {e}")
         import traceback
-
         traceback.print_exc()
         return []
