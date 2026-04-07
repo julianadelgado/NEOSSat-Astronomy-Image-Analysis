@@ -8,6 +8,7 @@ from astropy.coordinates import SkyCoord
 from astropy.stats import sigma_clipped_stats
 from astropy.wcs import WCS
 from photutils.detection import DAOStarFinder
+from sklearn.cluster import DBSCAN
 
 from cli.config import load_config
 from processing.core.processor import IProcessor
@@ -23,7 +24,11 @@ from matplotlib import pyplot as plt  # noqa: E402
 SIGMA = 3.0
 DAO_FINDER_FWHM = 3.0
 DAO_FINDER_THRESHOLD = 5.0
-MATCH_THRESHOLD = 30.0 * units.arcsec
+
+SATURATION_PERCENTILE = 99.9
+CLUSTER_EPS = 3.0
+MATCH_THRESHOLD_DEFAULT = 15.0 * units.arcsec
+MATCH_THRESHOLD_BRIGHT = 45.0 * units.arcsec
 
 CANDIDATE_NOT_FOUND_STRING = "not_found"
 
@@ -118,109 +123,106 @@ class StarDetection(IProcessor):
 
         return center, radius
 
-    def _detect_sources(self, image: np.ndarray, wcs: WCS):
-        """Run source detection on the image using DAOStarFinder"""
-
-        print("Running source detection...")
+    def _detect_sources(self, image: np.ndarray, wcs):
+        """Extract light sources from source image."""
 
         mean, median, std = sigma_clipped_stats(image, sigma=SIGMA)
-
-        daofind = DAOStarFinder(
-            fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std
-        )
+        daofind = DAOStarFinder(fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std)
 
         sources = daofind(image - median)
+        detected_candidates = []
 
         if sources is None or len(sources) == 0:
-            print("Found 0 potential star candidates.")
+            print("DAOStarFinder - No sources found.")
             return []
-
-        print(f"Found {len(sources)} potential star candidates.")
 
         x_coord = sources["xcentroid"]
         y_coord = sources["ycentroid"]
         flux = sources["flux"]
 
-        world_coords = wcs.pixel_to_world(x_coord, y_coord)
+        coords_array = np.column_stack((x_coord, y_coord))
+        clustering = DBSCAN(eps=CLUSTER_EPS, min_samples=1).fit(coords_array)
 
-        detected_candidates = []
+        for cluster_label in np.unique(clustering.labels_):
+            cluster_indices = np.where(clustering.labels_ == cluster_label)[0]
+            x_mean = np.mean(x_coord[cluster_indices])
+            y_mean = np.mean(y_coord[cluster_indices])
+            flux_sum = np.sum(flux[cluster_indices])
+            world_coord = wcs.pixel_to_world(x_mean, y_mean)
 
-        for i in range(len(sources)):
+            detected_candidates.append({
+                "x": float(x_mean),
+                "y": float(y_mean),
+                "coord": world_coord,
+                "flux": float(flux_sum)
+            })
 
-            detected_candidates.append(
-                {
-                    "x": float(x_coord[i]),
-                    "y": float(y_coord[i]),
-                    "coord": world_coords[i],
-                    "flux": float(flux[i]),
-                }
-            )
+        saturation_threshold = np.percentile(image, SATURATION_PERCENTILE)
+        saturated_mask = image >= saturation_threshold
 
-        print(
-            f"Detected {len(detected_candidates)} star candidates after DAOStarFinder."
-        )
+        if np.any(saturated_mask):
+            from scipy.ndimage import label, center_of_mass
 
+            labeled, n_objects = label(saturated_mask)
+            for i in range(1, n_objects + 1):
+                mask_i = labeled == i
+                y_c, x_c = center_of_mass(mask_i)
+                world_coord = wcs.pixel_to_world(x_c, y_c)
+                flux_sum = np.sum(image[mask_i])
+                detected_candidates.append({
+                    "x": float(x_c),
+                    "y": float(y_c),
+                    "coord": world_coord,
+                    "flux": float(flux_sum)
+                })
+
+        print(f"Stars detected: {len(detected_candidates)}")
         return detected_candidates
 
     def _match_candidates(self, detected_candidates, region_catalog):
         """Match detected candidates with SIMBAD catalog objects"""
 
-        print("Matching detected candidates with catalog objects...")
-
         if len(detected_candidates) == 0:
             return []
 
         if len(region_catalog) == 0:
-            matched = []
-            for src in detected_candidates:
-                matched.append(
-                    {
-                        **src,
-                        "object_id": CANDIDATE_NOT_FOUND_STRING,
-                        "otype": "Default",
-                        "deviation_arcsec": None,
-                    }
-                )
-            return matched
+            return [{
+                **src,
+                "object_id": CANDIDATE_NOT_FOUND_STRING,
+                "otype": "Default",
+                "deviation_arcsec": None
+            } for src in detected_candidates]
 
         detected_coords = SkyCoord([src["coord"] for src in detected_candidates])
         catalog_coords = SkyCoord([obj.coord for obj in region_catalog])
-
         idx, sep2d, _ = detected_coords.match_to_catalog_sky(catalog_coords)
 
         matched_candidates = []
-
         for i, src in enumerate(detected_candidates):
-            separation = sep2d[i]
-            if separation < MATCH_THRESHOLD:
-                matched_candidates.append(
-                    {
-                        **src,
-                        "object_id": region_catalog[idx[i]].object_id,
-                        "otype": getattr(region_catalog[idx[i]], "otype", "Default"),
-                        "deviation_arcsec": separation.arcsec,
-                    }
-                )
+
+            if src["flux"] > np.percentile([c["flux"] for c in detected_candidates], 99):
+                sep_threshold = MATCH_THRESHOLD_BRIGHT
             else:
-                matched_candidates.append(
-                    {
-                        **src,
-                        "object_id": CANDIDATE_NOT_FOUND_STRING,
-                        "otype": "Default",
-                        "deviation_arcsec": separation.arcsec,
-                    }
-                )
+                sep_threshold = MATCH_THRESHOLD_DEFAULT
 
-        identified_candidates = [
-            c
-            for c in matched_candidates
-            if c["object_id"] != CANDIDATE_NOT_FOUND_STRING
-        ]
+            separation = sep2d[i]
+            if separation < sep_threshold:
+                matched_candidates.append({
+                    **src,
+                    "object_id": region_catalog[idx[i]].object_id,
+                    "otype": getattr(region_catalog[idx[i]], "otype", "Default"),
+                    "deviation_arcsec": separation.arcsec
+                })
+            else:
+                matched_candidates.append({
+                    **src,
+                    "object_id": CANDIDATE_NOT_FOUND_STRING,
+                    "otype": "Default",
+                    "deviation_arcsec": separation.arcsec
+                })
 
-        matched_count = len(identified_candidates)
-
+        matched_count = sum(1 for c in matched_candidates if c["object_id"] != CANDIDATE_NOT_FOUND_STRING)
         print(f"Matched {matched_count} candidates with catalog objects.")
-
         return matched_candidates
 
     def _export_results(self, matched_candidates, output_dir: Path):
