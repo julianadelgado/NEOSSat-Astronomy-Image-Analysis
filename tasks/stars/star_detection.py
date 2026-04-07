@@ -74,7 +74,7 @@ class StarDetection(IProcessor):
             image=image, wcs=wcs, region_catalog=region_catalog, output_dir=output_dir
         )
 
-        detected_candidates = self._detect_sources(image, wcs)
+        detected_candidates = self._detect_sources(image, wcs, header)
 
         if len(detected_candidates) == 0:
             return {"stars_detected": 0}
@@ -123,8 +123,8 @@ class StarDetection(IProcessor):
 
         return center, radius
 
-    def _detect_sources(self, image: np.ndarray, wcs):
-        """Extract light sources from source image."""
+    def _detect_sources(self, image: np.ndarray, wcs, header):
+        """Extract light sources from source image, compute flux and approximate magnitude."""
 
         mean, median, std = sigma_clipped_stats(image, sigma=SIGMA)
         daofind = DAOStarFinder(fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std)
@@ -135,6 +135,10 @@ class StarDetection(IProcessor):
         if sources is None or len(sources) == 0:
             print("DAOStarFinder - No sources found.")
             return []
+
+        exptime = header.get("EXPOSURE", header.get("AEXPTIME", 1.0))
+        gain = float(header.get("GAIN", 1.0))
+        zp = 25.0 # This value needs to be tuned or update. AB - 07/04/2026
 
         x_coord = sources["xcentroid"]
         y_coord = sources["ycentroid"]
@@ -150,11 +154,18 @@ class StarDetection(IProcessor):
             flux_sum = np.sum(flux[cluster_indices])
             world_coord = wcs.pixel_to_world(x_mean, y_mean)
 
+            try:
+                magnitude = -2.5 * np.log10(flux_sum / exptime * gain) + zp
+            except:
+                magnitude = None
+
             detected_candidates.append({
                 "x": float(x_mean),
                 "y": float(y_mean),
                 "coord": world_coord,
-                "flux": float(flux_sum)
+                "flux": float(flux_sum),
+                "magnitude": float(magnitude) if magnitude is not None else None,
+                "saturated": False
             })
 
         saturation_threshold = np.percentile(image, SATURATION_PERCENTILE)
@@ -169,18 +180,26 @@ class StarDetection(IProcessor):
                 y_c, x_c = center_of_mass(mask_i)
                 world_coord = wcs.pixel_to_world(x_c, y_c)
                 flux_sum = np.sum(image[mask_i])
+
+                try:
+                    magnitude = -2.5 * np.log10(flux_sum / exptime * gain) + zp
+                except:
+                    magnitude = None
+
                 detected_candidates.append({
                     "x": float(x_c),
                     "y": float(y_c),
                     "coord": world_coord,
-                    "flux": float(flux_sum)
+                    "flux": float(flux_sum),
+                    "magnitude": float(magnitude) if magnitude is not None else None,
+                    "saturated": True
                 })
 
         print(f"Stars detected: {len(detected_candidates)}")
         return detected_candidates
 
     def _match_candidates(self, detected_candidates, region_catalog):
-        """Match detected candidates with SIMBAD catalog objects"""
+        """Match detected candidates with SIMBAD catalog objects and compute min/max magnitude."""
 
         if len(detected_candidates) == 0:
             return []
@@ -198,6 +217,8 @@ class StarDetection(IProcessor):
         idx, sep2d, _ = detected_coords.match_to_catalog_sky(catalog_coords)
 
         matched_candidates = []
+        magnitudes = []
+
         for i, src in enumerate(detected_candidates):
 
             if src["flux"] > np.percentile([c["flux"] for c in detected_candidates], 99):
@@ -206,6 +227,7 @@ class StarDetection(IProcessor):
                 sep_threshold = MATCH_THRESHOLD_DEFAULT
 
             separation = sep2d[i]
+            matched = False
             if separation < sep_threshold:
                 matched_candidates.append({
                     **src,
@@ -213,6 +235,7 @@ class StarDetection(IProcessor):
                     "otype": getattr(region_catalog[idx[i]], "otype", "Default"),
                     "deviation_arcsec": separation.arcsec
                 })
+                matched = True
             else:
                 matched_candidates.append({
                     **src,
@@ -221,8 +244,15 @@ class StarDetection(IProcessor):
                     "deviation_arcsec": separation.arcsec
                 })
 
+            if src.get("magnitude") is not None:
+                magnitudes.append(src["magnitude"])
+
+        if magnitudes:
+            print(f"Min magnitude: {min(magnitudes):.2f}, Max magnitude: {max(magnitudes):.2f}")
+
         matched_count = sum(1 for c in matched_candidates if c["object_id"] != CANDIDATE_NOT_FOUND_STRING)
         print(f"Matched {matched_count} candidates with catalog objects.")
+
         return matched_candidates
 
     def _export_results(self, matched_candidates, output_dir: Path):
