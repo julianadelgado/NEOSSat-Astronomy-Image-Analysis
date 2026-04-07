@@ -95,6 +95,8 @@ class StarDetection(IProcessor):
             image, wcs, detected_candidates, matched_candidates, output_dir
         )
 
+        self._render_magnitude_plot(matched_candidates, output_dir)
+
         self._generate_report(output_dir, {"stars_detected": len(matched_candidates)})
 
         return {"stars_detected": len(matched_candidates)}
@@ -199,8 +201,6 @@ class StarDetection(IProcessor):
         return detected_candidates
 
     def _match_candidates(self, detected_candidates, region_catalog):
-        """Match detected candidates with SIMBAD catalog objects and compute min/max magnitude."""
-
         if len(detected_candidates) == 0:
             return []
 
@@ -209,7 +209,10 @@ class StarDetection(IProcessor):
                 **src,
                 "object_id": CANDIDATE_NOT_FOUND_STRING,
                 "otype": "Default",
-                "deviation_arcsec": None
+                "deviation_arcsec": None,
+                "sim_b": None,
+                "sim_v": None,
+                "sim_r": None
             } for src in detected_candidates]
 
         detected_coords = SkyCoord([src["coord"] for src in detected_candidates])
@@ -217,38 +220,45 @@ class StarDetection(IProcessor):
         idx, sep2d, _ = detected_coords.match_to_catalog_sky(catalog_coords)
 
         matched_candidates = []
-        magnitudes = []
+        magnitudes_obs = []
 
         for i, src in enumerate(detected_candidates):
 
-            if src["flux"] > np.percentile([c["flux"] for c in detected_candidates], 99):
-                sep_threshold = MATCH_THRESHOLD_BRIGHT
-            else:
-                sep_threshold = MATCH_THRESHOLD_DEFAULT
-
+            sep_threshold = MATCH_THRESHOLD_BRIGHT if src["flux"] > np.percentile([c["flux"] for c in detected_candidates], 99) else MATCH_THRESHOLD_DEFAULT
             separation = sep2d[i]
-            matched = False
+
             if separation < sep_threshold:
+                matched_obj = region_catalog[idx[i]]
                 matched_candidates.append({
                     **src,
-                    "object_id": region_catalog[idx[i]].object_id,
-                    "otype": getattr(region_catalog[idx[i]], "otype", "Default"),
-                    "deviation_arcsec": separation.arcsec
+                    "object_id": matched_obj.object_id,
+                    "otype": getattr(matched_obj, "otype", "Default"),
+                    "deviation_arcsec": separation.arcsec,
+                    "sim_b": getattr(matched_obj, "mag_b_val", None),
+                    "sim_v": getattr(matched_obj, "mag_v_val", None),
+                    "sim_r": getattr(matched_obj, "mag_r_val", None),
                 })
-                matched = True
             else:
                 matched_candidates.append({
                     **src,
                     "object_id": CANDIDATE_NOT_FOUND_STRING,
                     "otype": "Default",
-                    "deviation_arcsec": separation.arcsec
+                    "deviation_arcsec": separation.arcsec,
+                    "sim_b": None,
+                    "sim_v": None,
+                    "sim_r": None
                 })
 
             if src.get("magnitude") is not None:
-                magnitudes.append(src["magnitude"])
+                magnitudes_obs.append(src["magnitude"])
 
-        if magnitudes:
-            print(f"Min magnitude: {min(magnitudes):.2f}, Max magnitude: {max(magnitudes):.2f}")
+        if magnitudes_obs:
+            print(f"Observed magnitudes: min={min(magnitudes_obs):.2f}, max={max(magnitudes_obs):.2f}")
+
+        sim_mags = [obj.mag_v_val for obj in region_catalog if obj.mag_v_val is not None]
+        if sim_mags:
+            print(f"SIMBAD catalog magnitudes (V): min={min(sim_mags):.2f}, max={max(sim_mags):.2f}")
+            print(f"Number of expected stars in frame: {len(sim_mags)}")
 
         matched_count = sum(1 for c in matched_candidates if c["object_id"] != CANDIDATE_NOT_FOUND_STRING)
         print(f"Matched {matched_count} candidates with catalog objects.")
@@ -267,38 +277,29 @@ class StarDetection(IProcessor):
 
             writer.writerow(
                 [
-                    "id",
-                    "x_pixel",
-                    "y_pixel",
-                    "ra_deg",
-                    "dec_deg",
-                    "flux",
-                    "object_id",
-                    "deviation_arcsec",
+                    "id", "x_pixel", "y_pixel", "ra_deg", "dec_deg",
+                    "flux", "magnitude_obs",
+                    "object_id", "otype", "deviation_arcsec",
+                    "mag_b_simbad", "mag_v_simbad", "mag_r_simbad"
                 ]
             )
 
             for i, candidate in enumerate(matched_candidates):
-
-                ra_deg = candidate["coord"].ra.deg
-                dec_deg = candidate["coord"].dec.deg
-                deviation = candidate.get("deviation_arcsec")
-                object_id = candidate.get("object_id", CANDIDATE_NOT_FOUND_STRING)
-
                 writer.writerow(
                     [
                         i,
                         candidate["x"],
                         candidate["y"],
-                        ra_deg,
-                        dec_deg,
+                        candidate["coord"].ra.deg,
+                        candidate["coord"].dec.deg,
                         candidate["flux"],
-                        object_id,
-                        (
-                            deviation
-                            if deviation is not None
-                            else CANDIDATE_NOT_FOUND_STRING
-                        ),
+                        candidate.get("magnitude"),
+                        candidate.get("object_id", CANDIDATE_NOT_FOUND_STRING),
+                        candidate.get("otype", "Default"),
+                        candidate.get("deviation_arcsec", CANDIDATE_NOT_FOUND_STRING),
+                        candidate.get("sim_b"),
+                        candidate.get("sim_v"),
+                        candidate.get("sim_r")
                     ]
                 )
 
@@ -466,6 +467,58 @@ class StarDetection(IProcessor):
         plt.close(fig)
 
         print(f"Region catalog map saved to {map_path}")
+
+    def _render_magnitude_plot(self, matched_candidates, output_dir: Path):
+        """Visualize magnitudes (observed + SIMBAD) for matched stars with object_id on X-axis."""
+
+        matched_objects = [c for c in matched_candidates if c["object_id"] != CANDIDATE_NOT_FOUND_STRING]
+
+        if not matched_objects:
+            print("No matched stars to plot magnitudes.")
+            return
+
+        object_ids = [c["object_id"] for c in matched_objects]
+        mag_obs = [c.get("magnitude") for c in matched_objects]
+        mag_b_simbad = [c.get("sim_b") for c in matched_objects]
+        mag_v_simbad = [c.get("sim_v") for c in matched_objects]
+        mag_r_simbad = [c.get("sim_r") for c in matched_objects]
+
+        fig, ax = plt.subplots(figsize=(max(12, len(object_ids) * 0.5), 6))
+        ax.set_facecolor("white")
+        ax.grid(True, linestyle="--", alpha=0.5)
+
+        x = range(len(object_ids))
+
+        ax.scatter(x, mag_obs, color="black", marker="o", label="Observed")
+
+        ax.scatter(x, mag_b_simbad, color="blue", marker="s", label="SIMBAD B")
+        ax.scatter(x, mag_v_simbad, color="green", marker="s", label="SIMBAD V")
+        ax.scatter(x, mag_r_simbad, color="red", marker="s", label="SIMBAD R")
+
+        ax.invert_yaxis()
+        ax.set_xticks(x)
+        ax.set_xticklabels(object_ids, rotation=90, fontsize=8)
+        ax.set_xlabel("Object ID")
+        ax.set_ylabel("Magnitude")
+        ax.set_title("Magnitudes")
+        ax.legend(loc="upper right", fontsize=8)
+
+        valid_mags = [m for m in mag_obs if m is not None]
+        if valid_mags:
+            min_mag = min(valid_mags)
+            max_mag = max(valid_mags)
+            ax.axhline(min_mag, color="gray", linestyle="--", alpha=0.7, label=f"Min observed ({min_mag:.2f})")
+            ax.axhline(max_mag, color="gray", linestyle=":", alpha=0.7, label=f"Max observed ({max_mag:.2f})")
+            ax.text(0, min_mag, f'MIN ({min_mag:.2f})', color='gray', fontsize=10, verticalalignment='bottom')
+            ax.text(0, max_mag, f'MAX ({max_mag:.2f})', color='gray', fontsize=10, verticalalignment='top')
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        plot_path = output_dir / "magnitudes_plot.png"
+        plt.tight_layout()
+        plt.savefig(plot_path, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+
+        print(f"Magnitude plot saved to {plot_path}")
 
     def _generate_report(self, output_dir: Path, results: dict):
         report_service = ReportService(reports_dir=REPORTS_DIR)
