@@ -8,6 +8,8 @@ import numpy.ma as ma
 
 import tasks.stars.identified_object as identified_object
 
+MINIMUM_MAGNITUDE = 20.0
+
 
 def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
     try:
@@ -86,7 +88,7 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
             mag_v = result["V"][i] if "V" in result.colnames else None
             mag_r = result["R"][i] if "R" in result.colnames else None
 
-            if all(m is None or ma.is_masked(m) for m in [mag_b, mag_v, mag_r]):
+            if all(m is None or ma.is_masked(m) or m > MINIMUM_MAGNITUDE for m in [mag_b, mag_v, mag_r]):
                 continue
 
             otype = result["otype"][i] if "otype" in result.colnames else "Unknown"
