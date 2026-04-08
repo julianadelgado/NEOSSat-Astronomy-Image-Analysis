@@ -75,13 +75,13 @@ def main(
         cfg.smtp_server = typer.prompt("Enter the SMTP server address")
     if not cfg.smtp_password:
         cfg.smtp_password = typer.prompt("Enter the SMTP password", hide_input=True)
-    if reports_dir:
-        cfg.reports_dir = reports_dir
 
-    svc = EmailService(cfg.smtp_server, cfg.smtp_port, cfg.smtp_user, cfg.smtp_password, cfg.reports_dir)
+    svc = EmailService(cfg.smtp_server, cfg.smtp_port, cfg.smtp_user, cfg.smtp_password)
 
     if results_dir:
         cfg.results_dir = results_dir
+    if reports_dir:
+        cfg.reports_dir = reports_dir
     if wrong_mode_dir:
         cfg.wrong_mode_dir = wrong_mode_dir
 
