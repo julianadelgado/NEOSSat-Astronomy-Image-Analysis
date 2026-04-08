@@ -4,6 +4,12 @@ import pytest
 from services.report_service import ReportData, ReportSection, ReportTable
 
 
+def _latest_report_file(reports_dir):
+    reports = sorted(reports_dir.glob("*_report_*.md"))
+    assert reports, "No report was generated"
+    return reports[-1]
+
+
 def test_generate_report_creates_file(report_service):
     data = ReportData(task_name="Test Task")
     output_path = report_service.generate(data)
@@ -85,6 +91,34 @@ def test_generate_streak_report_with_subsection(report_service):
     text = "".join(page.extract_text() for page in reader.pages)
     assert "Detection 1" in text
     assert "Confidence: 0.9" in text
+
+
+def test_generate_streak_report_shows_no_streaks_found(report_service):
+    data = ReportData(
+        task_name="Streak Detection",
+        sections=[ReportSection(title="File: sample_file", content="No streaks found")],
+    )
+    content = report_service.generate(data).read_text()
+    assert "No streaks found" in content
+
+
+def test_generate_streak_report_shows_unknown_origin_of_streak(report_service):
+    data = ReportData(
+        task_name="Streak Detection",
+        sections=[
+            ReportSection(
+                title="File: sample_file",
+                subsections=[
+                    ReportSection(
+                        title="Detection 1",
+                        content="- Confidence: 0.83\n- Unknown origin of streak",
+                    )
+                ],
+            )
+        ],
+    )
+    content = report_service.generate(data).read_text()
+    assert "Unknown origin of streak" in content
 
 
 def test_generate_report_empty_sections(report_service):

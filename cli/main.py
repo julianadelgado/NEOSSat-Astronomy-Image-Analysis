@@ -99,7 +99,7 @@ def main(
                 # TODO verify order of call operations
                 if run_image_stacking:
                     print("Running image stacking...")
-                    # TODO Should ImageStacking be a preprocessor?
+
                     sky_coord = data_manager.get_coordinates()
                     date_obs = data_manager.get_images_same_date()
 

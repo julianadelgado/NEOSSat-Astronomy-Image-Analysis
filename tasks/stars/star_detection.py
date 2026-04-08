@@ -10,7 +10,7 @@ from astropy.wcs import WCS
 from photutils.detection import DAOStarFinder
 
 from cli.config import load_config
-from preprocessing.core.preprocessor import IPreprocessor
+from processing.core.processor import IProcessor
 from services.report_service import ReportData, ReportSection, ReportService
 from tasks.stars.heatmap import generate_heatmap
 from tasks.stars.map_groups import map_to_group
@@ -49,12 +49,12 @@ OUTPUT_DIR = Path(config.results_dir)
 REPORTS_DIR = Path(config.reports_dir)
 
 
-class StarDetection(IPreprocessor):
+class StarDetection(IProcessor):
 
     def name(self) -> str:
         return "star_detection"
 
-    def run(self, image: np.ndarray, header, output_dir: Path) -> dict:
+    def run(self, image: np.ndarray, header, output_dir: Path, **kwargs) -> dict:
 
         wcs = WCS(header)
 
