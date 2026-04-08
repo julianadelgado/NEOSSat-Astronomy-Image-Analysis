@@ -98,8 +98,10 @@ def test_generate_streak_report_shows_no_streaks_found(report_service):
         task_name="Streak Detection",
         sections=[ReportSection(title="File: sample_file", content="No streaks found")],
     )
-    content = report_service.generate(data).read_text()
-    assert "No streaks found" in content
+    output_path = report_service.generate(data)
+    reader = pypdf.PdfReader(output_path)
+    text = "".join(page.extract_text() for page in reader.pages)
+    assert "No streaks found" in text
 
 
 def test_generate_streak_report_shows_unknown_origin_of_streak(report_service):
@@ -117,8 +119,10 @@ def test_generate_streak_report_shows_unknown_origin_of_streak(report_service):
             )
         ],
     )
-    content = report_service.generate(data).read_text()
-    assert "Unknown origin of streak" in content
+    output_path = report_service.generate(data)
+    reader = pypdf.PdfReader(output_path)
+    text = "".join(page.extract_text() for page in reader.pages)
+    assert "Unknown origin of streak" in text
 
 
 def test_generate_report_empty_sections(report_service):
