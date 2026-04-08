@@ -40,9 +40,9 @@ class ReportService:
         if filename is None:
             ts = data.timestamp.strftime("%Y%m%d_%H%M%S")
             slug = data.task_name.lower().replace(" ", "_")
-            filename = f"{slug}_report_{ts}.md"
+            filename = f"{slug}_report_{ts}.pdf"
 
-        output_path = self.reports_dir / filename
+        pdf_path = self.reports_dir / filename
 
         lines = [
             f"# {data.task_name} Report",
@@ -53,12 +53,8 @@ class ReportService:
         for section in data.sections:
             lines.extend(self._render_section(section, level=2))
 
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write("\n".join(lines))
-
-        print(f"Report generated: {output_path.absolute()}")
-        self.pdf_transform(output_path)
-        return output_path
+        self.create_pdf(pdf_path, lines)
+        return pdf_path
 
     def _render_section(self, section: ReportSection, level: int) -> List[str]:
         heading = "#" * level
@@ -83,11 +79,8 @@ class ReportService:
         lines += ["---", ""]
         return lines
 
-    def pdf_transform(self, markdown_path: Path) -> Path:
-        pdf_path = markdown_path.with_suffix(".pdf")
-        body = markdown.markdown(
-            markdown_path.read_text(encoding="utf-8"), extensions=["tables"]
-        )
+    def create_pdf(self, pdf_path: Path, lines: List[str]) -> Path:
+        body = markdown.markdown("\n".join(lines), extensions=["tables"])
         body = re.sub(r"<img (.*?)>", r'<img \1 width="500">', body)
         pdf = FPDF()
         pdf.set_margins(20, 20, 20)
