@@ -1,54 +1,34 @@
 @startuml use-case-en
+top to bottom direction
 
 actor User
 
-cloud "Database" as DB
+cloud "Astronomical Catalogue SIMBAD" as SIMBAD
+cloud "ASC/CSA API" as SAT
 cloud "SMTP Server" as SMTP
 
 package "NEOSSAT - Astronomical Image Analysis" {
 
-    usecase "AG1 - Collect all FITS images of the same region" as AG1
-    usecase "AG2 - Stack images" as AG2
-
-    usecase "AN1 - Identify the observed region" as AN1
-    usecase "AN2 - Extract light sources from an image" as AN2
-    usecase "AN3 - Extract light streaks from an image" as AN3
-
-    usecase "IN1 - Identify light sources" as IN1
-    usecase "IN2 - Identify light streaks" as IN2
-    usecase "IN3 - List all unidentified light sources and streaks" as IN3
-
-    usecase "PR1 - Notify the user of analysis results" as PR1
-    usecase "PR2 - Generate a PDF report of the results" as PR2
-    usecase "PR3 - Display streak detection results" as PR3
-    usecase "PR4 - Display light source detection results" as PR4
-    usecase "PR5 - Display image stacking results" as PR5
+    usecase "UC-01: Analyze an astronomical image" as UC01
+    usecase "UC-02: Detect and identify stars" as UC02
+    usecase "UC-03: Detect and identify streaks" as UC03
+    usecase "UC-04: Stack images" as UC04
+    usecase "UC-05: Generate analysis report" as UC05
+    usecase "UC-06: Notify the user" as UC06
 
 }
 
-User --> AG1
-User --> AN2
-User --> AN3
+User --> UC01
 
-DB --> AG1
-AG1 --> AG2
+UC01 --> UC02
+UC01 --> UC03
+UC01 --> UC05
+UC01 --> UC06
 
-AN1 --> IN1
-AN2 --> IN1
-IN1 --> PR2
-AN3 --> IN2
-IN2 --> PR2
-IN1 --> IN3
-IN2 --> IN3
-IN3 --> PR2
+UC01 --> UC04
 
-PR2 --> PR1
-PR1 --> SMTP
-PR2 --> PR3
-PR3 --> User
-PR2 --> PR4
-PR4 --> User
-PR2 --> PR5
-PR5 --> User
+SIMBAD --> UC02
+SAT --> UC04
+SMTP --> UC06
 
 @enduml

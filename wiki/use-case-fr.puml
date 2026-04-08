@@ -1,54 +1,34 @@
 @startuml use-case-fr
+top to bottom direction
 
 actor Utilisateur
 
-cloud "Base de données" as DB
+cloud "Catalogue astronomique SIMBAD" as SIMBAD
+cloud "API ASC/CSA" as SAT
 cloud "Serveur SMTP" as SMTP
 
 package "NEOSSAT - Analyse d'images astronomiques" {
 
-    usecase "AG1 - Collecter toutes les images FITS d'une même région" as AG1
-    usecase "AG2 - Empiler les images" as AG2
-
-    usecase "AN1 - Identifier la région observée" as AN1
-    usecase "AN2 - Extraire les sources lumineuses d'une image" as AN2
-    usecase "AN3 - Extraire les traînées lumineuses d'une image" as AN3
-
-    usecase "IN1 - Identifier les sources lumineuses" as IN1
-    usecase "IN2 - Identifier les traînées lumineuses" as IN2
-    usecase "IN3 - Lister toutes les sources et traînées non identifiées" as IN3
-
-    usecase "PR1 - Notifier l'utilisateur des résultats de l'analyse" as PR1
-    usecase "PR2 - Générer un rapport PDF des résultats" as PR2
-    usecase "PR3 - Afficher les résultats de détection des traînées" as PR3
-    usecase "PR4 - Afficher les résultats de détection des sources lumineuses" as PR4
-    usecase "PR5 - Afficher les résultats de l'empilement d'images" as PR5
+    usecase "UC-01 : Analyser une image astronomique" as UC01
+    usecase "UC-02 : Détecter et identifier des étoiles" as UC02
+    usecase "UC-03 : Détecter et identifier les traînées" as UC03
+    usecase "UC-04 : Empiler les images" as UC04
+    usecase "UC-05 : Générer un rapport d'analyse" as UC05
+    usecase "UC-06 : Notifier l'utilisateur" as UC06
 
 }
 
-Utilisateur --> AG1
-Utilisateur --> AN2
-Utilisateur --> AN3
+Utilisateur --> UC01
 
-DB --> AG1
-AG1 --> AG2
+UC01 --> UC02
+UC01 --> UC03
+UC01 --> UC05
+UC01 --> UC06
 
-AN1 --> IN1
-AN2 --> IN1 
-IN1 --> PR2
-AN3 --> IN2
-IN2 --> PR2
-IN1 --> IN3
-IN2 --> IN3
-IN3 --> PR2
+UC01 --> UC04
 
-PR2 --> PR1
-PR1 --> SMTP
-PR2 --> PR3
-PR3 --> Utilisateur
-PR2 --> PR4
-PR4 --> Utilisateur
-PR2 --> PR5
-PR5 --> Utilisateur
+SIMBAD --> UC02
+SAT --> UC04
+SMTP --> UC06
 
 @enduml
