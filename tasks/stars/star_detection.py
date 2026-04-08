@@ -76,6 +76,15 @@ class StarDetection(IProcessor):
 
         detected_candidates = self._detect_sources(image, wcs, header)
 
+        FLUX_THRESHOLD = 1.05
+        filtered_candidates = [
+            src for src in detected_candidates
+            if src["flux"] >= FLUX_THRESHOLD
+        ]
+
+        print(f"Filtered {len(detected_candidates) - len(filtered_candidates)} faint candidates based on flux")
+        detected_candidates = filtered_candidates
+
         if len(detected_candidates) == 0:
             return {"stars_detected": 0}
 
