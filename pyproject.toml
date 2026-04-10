@@ -22,7 +22,6 @@ dependencies = [
 cli = [
     "astroquery>=0.4.11",
     "typer>=0.24.1",
-    "pyqt6>=6.7.0",
     "pyyaml>=5.3.1",
     "astroalign>=2.6.2",
     "pillow>=7.1.2",
