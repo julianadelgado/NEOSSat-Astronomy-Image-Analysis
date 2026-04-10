@@ -6,3 +6,4 @@ smtp_user:
 smtp_server: 
 smtp_port: 
 smtp_password: 
+send_email: true

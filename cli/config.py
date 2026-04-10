@@ -11,6 +11,7 @@ class Config:
     smtp_server: str = ""
     smtp_port: int = 587
     smtp_password: str = ""
+    send_email: bool = True
     data_dir: str = "./data"
     results_dir: str = "./results"
     reports_dir: str = "./reports"

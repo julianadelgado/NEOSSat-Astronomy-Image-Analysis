@@ -67,16 +67,22 @@ def main(
     elif not cfg.data_dir:
         cfg.data_dir = typer.prompt("Enter the path to the data directory")
 
-    if email:
-        cfg.smtp_user = email
-    elif not cfg.smtp_user:
-        cfg.smtp_user = typer.prompt("Enter a valid email address to receive results")
-    if not cfg.smtp_server:
-        cfg.smtp_server = typer.prompt("Enter the SMTP server address")
-    if not cfg.smtp_password:
-        cfg.smtp_password = typer.prompt("Enter the SMTP password", hide_input=True)
+    svc = None
+    if cfg.send_email:
+        if email:
+            cfg.smtp_user = email
+        elif not cfg.smtp_user:
+            cfg.smtp_user = typer.prompt(
+                "Enter a valid email address to receive results"
+            )
+        if not cfg.smtp_server:
+            cfg.smtp_server = typer.prompt("Enter the SMTP server address")
+        if not cfg.smtp_password:
+            cfg.smtp_password = typer.prompt("Enter the SMTP password", hide_input=True)
 
-    svc = EmailService(cfg.smtp_server, cfg.smtp_port, cfg.smtp_user, cfg.smtp_password)
+        svc = EmailService(
+            cfg.smtp_server, cfg.smtp_port, cfg.smtp_user, cfg.smtp_password
+        )
 
     if results_dir:
         cfg.results_dir = results_dir
@@ -150,7 +156,9 @@ def main(
         completed_tasks.append("stars")
     if run_streaks:
         completed_tasks.append("streaks")
-    svc.send_completion_notification(cfg.smtp_user, completed_tasks)
+
+    if svc:
+        svc.send_completion_notification(cfg.smtp_user, completed_tasks)
 
 
 if __name__ == "__main__":
