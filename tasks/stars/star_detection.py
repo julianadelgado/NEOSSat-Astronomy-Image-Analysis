@@ -36,6 +36,8 @@ FIGSIZE = (10, 10)
 VMIN_PERCENTILE = 5
 VMAX_PERCENTILE = 99
 
+FILTERS = ["B", "V", "R", "J", "H", "K"]
+
 TYPE_SYMBOLS = {
     "star": {"marker": "+", "color": "red"},
     "planet": {"marker": "*", "color": "green"},
@@ -77,13 +79,11 @@ class StarDetection(IProcessor):
         detected_candidates = self._detect_sources(image, wcs, header)
 
         FLUX_THRESHOLD = 1.05
-        filtered_candidates = [
-            src for src in detected_candidates
-            if src["flux"] >= FLUX_THRESHOLD
+        detected_candidates = [
+            src for src in detected_candidates if src["flux"] >= FLUX_THRESHOLD
         ]
 
-        print(f"Filtered {len(detected_candidates) - len(filtered_candidates)} faint candidates based on flux")
-        detected_candidates = filtered_candidates
+        print(f"Filtered {len(detected_candidates) - len(detected_candidates)} faint candidates based on flux")
 
         if len(detected_candidates) == 0:
             return {"stars_detected": 0}
@@ -92,28 +92,16 @@ class StarDetection(IProcessor):
 
         self._export_results(matched_candidates, output_dir)
 
-        self._render_region_image(
-            image, wcs, detected_candidates, matched_candidates, output_dir
-        )
-
-        self._render_region_map(
-            image, wcs, detected_candidates, matched_candidates, output_dir
-        )
-
-        self._render_heatmaps(
-            image, wcs, detected_candidates, matched_candidates, output_dir
-        )
-
+        self._render_region_image(image, wcs, detected_candidates, matched_candidates, output_dir)
+        self._render_region_map(image, wcs, detected_candidates, matched_candidates, output_dir)
+        self._render_heatmaps(image, wcs, detected_candidates, matched_candidates, output_dir)
         self._render_magnitude_plot(matched_candidates, output_dir)
 
         self._generate_report(output_dir, {"stars_detected": len(matched_candidates)})
 
         return {"stars_detected": len(matched_candidates)}
 
-    """===> Private Functions <==="""
-
     def _get_image_region(self, image: np.ndarray, wcs: WCS):
-        """Calculate the center and radius of the image region"""
 
         height, width = image.shape
         x_corners = [0, width, 0, width]
@@ -123,9 +111,7 @@ class StarDetection(IProcessor):
 
         center = SkyCoord(ra=np.mean(corner_coords.ra), dec=np.mean(corner_coords.dec))
 
-        center_coord_str = f"RA={center.ra.deg:.4f} deg, Dec={center.dec.deg:.4f} deg"
-
-        print(f"Image region center: {center_coord_str}")
+        print(f"Image region center: RA={center.ra.deg:.4f} deg, Dec={center.dec.deg:.4f} deg")
 
         separations = center.separation(corner_coords)
         radius = separations.max()
@@ -135,7 +121,6 @@ class StarDetection(IProcessor):
         return center, radius
 
     def _detect_sources(self, image: np.ndarray, wcs, header):
-        """Extract light sources from source image, compute flux and approximate magnitude."""
 
         mean, median, std = sigma_clipped_stats(image, sigma=SIGMA)
         daofind = DAOStarFinder(fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std)
@@ -149,7 +134,7 @@ class StarDetection(IProcessor):
 
         exptime = header.get("EXPOSURE", header.get("AEXPTIME", 1.0))
         gain = float(header.get("GAIN", 1.0))
-        zp = 25.0 # This value needs to be tuned or update. AB - 07/04/2026
+        zp = 25.0
 
         x_coord = sources["xcentroid"]
         y_coord = sources["ycentroid"]
@@ -210,22 +195,25 @@ class StarDetection(IProcessor):
         return detected_candidates
 
     def _match_candidates(self, detected_candidates, region_catalog):
+
         if len(detected_candidates) == 0:
             return []
 
         if len(region_catalog) == 0:
-            return [{
-                **src,
-                "object_id": CANDIDATE_NOT_FOUND_STRING,
-                "otype": "Default",
-                "deviation_arcsec": None,
-                "sim_b": None,
-                "sim_v": None,
-                "sim_r": None
-            } for src in detected_candidates]
+            return [
+                {
+                    **src,
+                    "object_id": CANDIDATE_NOT_FOUND_STRING,
+                    "otype": "Default",
+                    "deviation_arcsec": None,
+                    **{f"sim_{f.lower()}": None for f in FILTERS},
+                }
+                for src in detected_candidates
+            ]
 
         detected_coords = SkyCoord([src["coord"] for src in detected_candidates])
         catalog_coords = SkyCoord([obj.coord for obj in region_catalog])
+
         idx, sep2d, _ = detected_coords.match_to_catalog_sky(catalog_coords)
 
         matched_candidates = []
@@ -243,9 +231,10 @@ class StarDetection(IProcessor):
                     "object_id": matched_obj.object_id,
                     "otype": getattr(matched_obj, "otype", "Default"),
                     "deviation_arcsec": separation.arcsec,
-                    "sim_b": getattr(matched_obj, "mag_b_val", None),
-                    "sim_v": getattr(matched_obj, "mag_v_val", None),
-                    "sim_r": getattr(matched_obj, "mag_r_val", None),
+                    **{
+                        f"sim_{f.lower()}": getattr(matched_obj, f"mag_{f.lower()}_val", None)
+                        for f in FILTERS
+                    },
                 })
             else:
                 matched_candidates.append({
@@ -253,9 +242,7 @@ class StarDetection(IProcessor):
                     "object_id": CANDIDATE_NOT_FOUND_STRING,
                     "otype": "Default",
                     "deviation_arcsec": separation.arcsec,
-                    "sim_b": None,
-                    "sim_v": None,
-                    "sim_r": None
+                    **{f"sim_{f.lower()}": None for f in FILTERS},
                 })
 
             if src.get("magnitude") is not None:
@@ -269,13 +256,11 @@ class StarDetection(IProcessor):
             print(f"SIMBAD catalog magnitudes (V): min={min(sim_mags):.2f}, max={max(sim_mags):.2f}")
             print(f"Number of expected stars in frame: {len(sim_mags)}")
 
-        matched_count = sum(1 for c in matched_candidates if c["object_id"] != CANDIDATE_NOT_FOUND_STRING)
-        print(f"Matched {matched_count} candidates with catalog objects.")
+        print(f"Matched {sum(1 for c in matched_candidates if c['object_id'] != CANDIDATE_NOT_FOUND_STRING)} candidates with catalog objects.")
 
         return matched_candidates
 
     def _export_results(self, matched_candidates, output_dir: Path):
-        """Export matched candidates to a CSV file"""
 
         output_dir.mkdir(parents=True, exist_ok=True)
         csv_path = output_dir / "star_detection_results.csv"
@@ -289,7 +274,7 @@ class StarDetection(IProcessor):
                     "id", "x_pixel", "y_pixel", "ra_deg", "dec_deg",
                     "flux", "magnitude_obs",
                     "object_id", "otype", "deviation_arcsec",
-                    "mag_b_simbad", "mag_v_simbad", "mag_r_simbad"
+                    *[f"mag_{f.lower()}_simbad" for f in FILTERS],
                 ]
             )
 
@@ -306,18 +291,13 @@ class StarDetection(IProcessor):
                         candidate.get("object_id", CANDIDATE_NOT_FOUND_STRING),
                         candidate.get("otype", "Default"),
                         candidate.get("deviation_arcsec", CANDIDATE_NOT_FOUND_STRING),
-                        candidate.get("sim_b"),
-                        candidate.get("sim_v"),
-                        candidate.get("sim_r")
+                        *[candidate.get(f"sim_{f.lower()}") for f in FILTERS],
                     ]
                 )
 
         print(f"Star detection results exported to {csv_path}")
 
-    def _render_region_image(
-        self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
-    ):
-        """Generate an image of the region with detected stars highlighted"""
+    def _render_region_image(self, image, wcs, detected_candidates, matched_candidates, output_dir: Path):
 
         output_dir.mkdir(parents=True, exist_ok=True)
         output_path = output_dir / "detected_stars_img.png"
@@ -338,37 +318,22 @@ class StarDetection(IProcessor):
             y_star = star["y"]
             object_id = star.get("object_id", CANDIDATE_NOT_FOUND_STRING)
 
-            if object_id != CANDIDATE_NOT_FOUND_STRING:
-                ax.plot(
-                    x_star,
-                    y_star,
-                    marker="o",
-                    markersize=8,
-                    markeredgecolor="cyan",
-                    markerfacecolor="none",
-                    label=object_id,
-                    linewidth=1.5,
-                )
-            else:
-                ax.plot(
-                    x_star,
-                    y_star,
-                    marker="o",
-                    markersize=8,
-                    markeredgecolor="red",
-                    markerfacecolor="none",
-                    linewidth=1.5,
-                )
+            ax.plot(
+                x_star,
+                y_star,
+                marker="o",
+                markersize=8,
+                markeredgecolor="cyan" if object_id != CANDIDATE_NOT_FOUND_STRING else "red",
+                markerfacecolor="none",
+                linewidth=1.5,
+            )
 
         plt.savefig(output_path, dpi=300, bbox_inches="tight")
         plt.close(fig)
 
         print(f"Region image with detected stars saved to {output_path}")
 
-    def _render_region_map(
-        self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
-    ):
-        """Generate an image of the region with stars highlighted with otypes"""
+    def _render_region_map(self, image, wcs, detected_candidates, matched_candidates, output_dir: Path):
 
         output_dir.mkdir(parents=True, exist_ok=True)
         map_path = output_dir / "detected_stars_map.png"
@@ -390,7 +355,6 @@ class StarDetection(IProcessor):
                 ax.plot(x_star, y_star, marker=".", color="white", markersize=6)
 
             otype = candidate.get("otype", "Default")
-
             group = map_to_group(otype)
             symbol_info = TYPE_SYMBOLS.get(group, TYPE_SYMBOLS["Default"])
 
@@ -410,10 +374,7 @@ class StarDetection(IProcessor):
 
         print(f"Region map with detected stars saved to {map_path}")
 
-    def _render_heatmaps(
-        self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
-    ):
-        """Generate heatmaps for detected candidates."""
+    def _render_heatmaps(self, image, wcs, detected_candidates, matched_candidates, output_dir: Path):
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -439,7 +400,6 @@ class StarDetection(IProcessor):
         print(f"Heatmap of detected stars saved to {heatmap_path}")
 
     def _render_region_catalog_map(self, image, wcs, region_catalog, output_dir: Path):
-        """Generate a map showing all objects in the SIMBAD region catalog."""
 
         if len(region_catalog) == 0:
             print("Region catalog is empty, nothing to render.")
@@ -478,7 +438,6 @@ class StarDetection(IProcessor):
         print(f"Region catalog map saved to {map_path}")
 
     def _render_magnitude_plot(self, matched_candidates, output_dir: Path):
-        """Visualize magnitudes (observed + SIMBAD) for matched stars with object_id on X-axis."""
 
         matched_objects = [c for c in matched_candidates if c["object_id"] != CANDIDATE_NOT_FOUND_STRING]
 
@@ -488,9 +447,11 @@ class StarDetection(IProcessor):
 
         object_ids = [c["object_id"] for c in matched_objects]
         mag_obs = [c.get("magnitude") for c in matched_objects]
-        mag_b_simbad = [c.get("sim_b") for c in matched_objects]
-        mag_v_simbad = [c.get("sim_v") for c in matched_objects]
-        mag_r_simbad = [c.get("sim_r") for c in matched_objects]
+
+        sim_mags = {
+            f: [c.get(f"sim_{f.lower()}") for c in matched_objects]
+            for f in FILTERS
+        }
 
         fig, ax = plt.subplots(figsize=(max(12, len(object_ids) * 0.5), 6))
         ax.set_facecolor("white")
@@ -500,9 +461,9 @@ class StarDetection(IProcessor):
 
         ax.scatter(x, mag_obs, color="black", marker="o", label="Observed")
 
-        ax.scatter(x, mag_b_simbad, color="blue", marker="s", label="SIMBAD B")
-        ax.scatter(x, mag_v_simbad, color="green", marker="s", label="SIMBAD V")
-        ax.scatter(x, mag_r_simbad, color="red", marker="s", label="SIMBAD R")
+        colors = ["blue", "green", "red", "orange", "purple", "brown"]
+        for f, col in zip(FILTERS, colors):
+            ax.scatter(x, sim_mags[f], color=col, marker="s", label=f"SIMBAD {f}")
 
         ax.invert_yaxis()
         ax.set_xticks(x)
@@ -516,10 +477,8 @@ class StarDetection(IProcessor):
         if valid_mags:
             min_mag = min(valid_mags)
             max_mag = max(valid_mags)
-            ax.axhline(min_mag, color="gray", linestyle="--", alpha=0.7, label=f"Min observed ({min_mag:.2f})")
-            ax.axhline(max_mag, color="gray", linestyle=":", alpha=0.7, label=f"Max observed ({max_mag:.2f})")
-            ax.text(0, min_mag, f'MIN ({min_mag:.2f})', color='gray', fontsize=10, verticalalignment='bottom')
-            ax.text(0, max_mag, f'MAX ({max_mag:.2f})', color='gray', fontsize=10, verticalalignment='top')
+            ax.axhline(min_mag, color="gray", linestyle="--")
+            ax.axhline(max_mag, color="gray", linestyle=":")
 
         output_dir.mkdir(parents=True, exist_ok=True)
         plot_path = output_dir / "magnitudes_plot.png"
@@ -530,7 +489,9 @@ class StarDetection(IProcessor):
         print(f"Magnitude plot saved to {plot_path}")
 
     def _generate_report(self, output_dir: Path, results: dict):
+
         report_service = ReportService(reports_dir=REPORTS_DIR)
+
         star_images = [
             p
             for p in [
@@ -541,6 +502,7 @@ class StarDetection(IProcessor):
             ]
             if p.exists()
         ]
+
         report_service.generate(
             ReportData(
                 task_name="Star Detection",

@@ -70,8 +70,10 @@ def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
 
 def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None):
     try:
+        FILTERS = ["B", "V", "R", "J", "H", "K"]
+
         custom_simbad = Simbad()
-        custom_simbad.add_votable_fields("otype", "B", "V", "R")
+        custom_simbad.add_votable_fields("otype", *FILTERS)
         result = custom_simbad.query_region(center, radius=radius)
 
         if result is None or len(result) == 0:
@@ -84,44 +86,45 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
         csv_rows = []
 
         for i in range(len(result)):
-            mag_b = result["B"][i] if "B" in result.colnames else None
-            mag_v = result["V"][i] if "V" in result.colnames else None
-            mag_r = result["R"][i] if "R" in result.colnames else None
+            mags = {
+                f: result[f][i] if f in result.colnames else None
+                for f in FILTERS
+            }
 
-            if all(m is None or ma.is_masked(m) or m > MINIMUM_MAGNITUDE for m in [mag_b, mag_v, mag_r]):
+            if all(
+                m is None or ma.is_masked(m) or m > MINIMUM_MAGNITUDE
+                for m in mags.values()
+            ):
                 continue
 
             otype = result["otype"][i] if "otype" in result.colnames else "Unknown"
 
-            mag_b_val = None if mag_b is None or ma.is_masked(mag_b) else mag_b
-            mag_v_val = None if mag_v is None or ma.is_masked(mag_v) else mag_v
-            mag_r_val = None if mag_r is None or ma.is_masked(mag_r) else mag_r
+            mags_clean = {
+                f: None if m is None or ma.is_masked(m) else m
+                for f, m in mags.items()
+            }
 
             obj = identified_object.IdentifiedObjectSkyCoord(
                 object_id=result["main_id"][i],
                 coord=obj_coords[i],
                 otype=otype,
-                mag_b_val=mag_b_val,
-                mag_v_val=mag_v_val,
-                mag_r_val=mag_r_val
+                **{f"mag_{f.lower()}_val": mags_clean[f] for f in FILTERS}
             )
             objects.append(obj)
 
             csv_rows.append([
-                obj.object_id,
-                obj.otype,
-                obj.coord.ra.deg,
-                obj.coord.dec.deg,
-                mag_b_val,
-                mag_v_val,
-                mag_r_val
+                result["main_id"][i],
+                otype,
+                obj_coords[i].ra.deg,
+                obj_coords[i].dec.deg,
+                *[mags_clean[f] for f in FILTERS]
             ])
 
         if output_csv_path and csv_rows:
             output_csv_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_csv_path, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(["main_id", "otype", "ra_deg", "dec_deg", "mag_b", "mag_v", "mag_r"])
+                writer.writerow(["main_id", "otype", "ra_deg", "dec_deg", *[f"mag_{f.lower()}" for f in FILTERS]])
                 writer.writerows(csv_rows)
             print(f"SIMBAD query results saved as {output_csv_path}")
 

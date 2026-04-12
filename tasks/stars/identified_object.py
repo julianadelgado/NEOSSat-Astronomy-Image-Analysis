@@ -20,3 +20,6 @@ class IdentifiedObjectSkyCoord:
     mag_b_val: float = None
     mag_v_val: float = None
     mag_r_val: float = None
+    mag_j_val: float = None
+    mag_h_val: float = None
+    mag_k_val: float = None
