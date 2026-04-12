@@ -15,7 +15,7 @@ from processing.core.processor import IProcessor
 from services.report_service import ReportData, ReportSection, ReportService
 from tasks.stars.heatmap import generate_heatmap
 from tasks.stars.map_groups import map_to_group
-from tasks.stars.queries import query_simbad_skycoord
+from services.simbad.simbad_service import query_simbad_skycoord
 
 matplotlib.use("Agg")
 

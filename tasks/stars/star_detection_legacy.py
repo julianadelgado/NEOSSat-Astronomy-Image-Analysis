@@ -10,7 +10,7 @@ from photutils.detection import DAOStarFinder
 
 from processing.core.processor import IProcessor
 from tasks.stars.heatmap import generate_heatmap
-from tasks.stars.queries import query_simbad
+from services.simbad.simbad_service import query_simbad
 
 # simbad_acceptance_radius = 2 * units.arcmin
 simbad_acceptance_radius = 45 * units.arcsec
