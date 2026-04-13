@@ -96,29 +96,47 @@ def render_region_catalog_map(image, wcs, region_catalog, output_dir: Path):
     fig.patch.set_facecolor("black")
     ax.set_facecolor("black")
     ax.axis("off")
+
     ax.set_xlim(0, image.shape[1])
     ax.set_ylim(0, image.shape[0])
 
+    seen_groups = set()
+
     for obj in region_catalog:
+
         x_pix, y_pix = wcs.world_to_pixel(obj.coord)
+
         otype = getattr(obj, "otype", "Default")
         group = map_to_group(otype)
         symbol_info = TYPE_SYMBOLS.get(group, TYPE_SYMBOLS["Default"])
+
+        seen_groups.add(group)
 
         ax.plot(
             x_pix,
             y_pix,
             marker=symbol_info["marker"],
             color=symbol_info["color"],
-            markersize=8,
-            label=obj.object_id,
+            markersize=7,
             fillstyle="none",
-            linewidth=1.5,
+            linewidth=1.2,
         )
 
-    seen_groups = {
-        map_to_group(getattr(obj, "otype", "Default")) for obj in region_catalog
-    }
+        label = getattr(obj, "object_id", None)
+
+        if label and label != "not_found":
+
+            ax.text(
+                x_pix + 4,
+                y_pix + 4,
+                label,
+                fontsize=6,
+                color="white",
+                ha="left",
+                va="bottom",
+                alpha=0.85,
+            )
+
     _build_legend(ax, seen_groups)
 
     plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)
