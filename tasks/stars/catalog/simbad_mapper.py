@@ -2,7 +2,7 @@ import numpy.ma as ma
 import astropy.units as units
 from astropy.coordinates import SkyCoord
 
-import tasks.stars.identified_object as identified_object
+import tasks.stars.catalog.identified_object as identified_object
 
 MINIMUM_MAGNITUDE = 20.0
 FILTERS = ["B", "V", "R", "J", "H", "K"]
