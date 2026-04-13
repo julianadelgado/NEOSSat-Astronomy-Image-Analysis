@@ -3,13 +3,11 @@ from pathlib import Path
 from services.report_service import ReportData, ReportSection, ReportService
 from tasks.stars.constants import (
     REPORTS_DIR,
-    REPORTS_NAME_SEPARATOR,
-    REPORTS_REGION_CATEGORY,
-    REPORTS_STARS_CATEGORY,
-    REPORTS_MAGNITUDE_CATEGORY,
-    REPORTS_IMAGE_SUFFIX,
-    REPORTS_MAP_SUFFIX,
-    REPORTS_HEATMAP_SUFFIX,
+    REPORTS_MAGNITUDE_PLOT_PATH,
+    REPORTS_REGION_MAP_PATH,
+    REPORTS_STARS_HEATMAP_PATH,
+    REPORTS_STARS_IMAGE_PATH,
+    REPORTS_STARS_MAP_PATH,
 )
 
 
@@ -20,10 +18,11 @@ def generate_report(output_dir: Path, results: dict):
     star_images = [
         p
         for p in [
-            output_dir / f"{REPORTS_STARS_CATEGORY}{REPORTS_NAME_SEPARATOR}{REPORTS_IMAGE_SUFFIX}",
-            output_dir / f"{REPORTS_STARS_CATEGORY}{REPORTS_NAME_SEPARATOR}{REPORTS_MAP_SUFFIX}",
-            output_dir / f"{REPORTS_REGION_CATEGORY}{REPORTS_NAME_SEPARATOR}{REPORTS_MAP_SUFFIX}",
-            output_dir / f"{REPORTS_STARS_CATEGORY}{REPORTS_NAME_SEPARATOR}{REPORTS_HEATMAP_SUFFIX}",
+            output_dir / REPORTS_STARS_IMAGE_PATH,
+            output_dir / REPORTS_STARS_MAP_PATH,
+            output_dir / REPORTS_REGION_MAP_PATH,
+            output_dir / REPORTS_STARS_HEATMAP_PATH,
+            output_dir / REPORTS_MAGNITUDE_PLOT_PATH,
         ]
         if p.exists()
     ]
