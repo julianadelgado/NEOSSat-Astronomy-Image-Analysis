@@ -1,10 +1,11 @@
-from pathlib import Path
 import csv
+from pathlib import Path
+
 from astropy.coordinates import SkyCoord
 
-from tasks.stars.exports.csv_exporter import export_results
-from tasks.stars.detected_star import DetectedStar
 from tasks.stars.constants import FILTERS
+from tasks.stars.detected_star import DetectedStar
+from tasks.stars.exports.csv_exporter import export_results
 
 
 def make_star(i=0):

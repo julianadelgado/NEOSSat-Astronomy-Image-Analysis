@@ -1,10 +1,14 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-import numpy as np
 
-from tasks.stars.exports.map_exporter import render_region_map, render_region_catalog_map
-from tasks.stars.detected_star import DetectedStar
+import numpy as np
 from astropy.coordinates import SkyCoord
+
+from tasks.stars.detected_star import DetectedStar
+from tasks.stars.exports.map_exporter import (
+    render_region_catalog_map,
+    render_region_map,
+)
 
 
 def make_star(i=0, object_id="OBJ", otype="STAR"):

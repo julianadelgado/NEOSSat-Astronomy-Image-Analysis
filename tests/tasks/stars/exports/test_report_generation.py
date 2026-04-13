@@ -1,8 +1,8 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from tasks.stars.exports.report_generation import generate_report
 from tasks.stars.constants import REPORTS_STARS_IMAGE_PATH, REPORTS_STARS_MAP_PATH
+from tasks.stars.exports.report_generation import generate_report
 
 
 @patch("tasks.stars.exports.report_generation.ReportService")

@@ -1,10 +1,11 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from tasks.stars.exports.magnitude_data_exporter import render_magnitude_plot
-from tasks.stars.detected_star import DetectedStar
-from tasks.stars.constants import FILTERS
 from astropy.coordinates import SkyCoord
+
+from tasks.stars.constants import FILTERS
+from tasks.stars.detected_star import DetectedStar
+from tasks.stars.exports.magnitude_data_exporter import render_magnitude_plot
 
 
 def make_star(i, object_id="OBJ"):

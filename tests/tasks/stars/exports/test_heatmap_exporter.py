@@ -1,10 +1,11 @@
 from pathlib import Path
 from unittest.mock import patch
-import numpy as np
 
-from tasks.stars.exports.heatmap_exporter import render_heatmaps, generate_heatmap
-from tasks.stars.detected_star import DetectedStar
+import numpy as np
 from astropy.coordinates import SkyCoord
+
+from tasks.stars.detected_star import DetectedStar
+from tasks.stars.exports.heatmap_exporter import generate_heatmap, render_heatmaps
 
 
 def make_star(x, y, flux=10.0):
