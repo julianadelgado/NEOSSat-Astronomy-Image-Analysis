@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from tasks.stars.constants import REPORTS_STARS_HEATMAP_PATH
+from tasks.stars.detected_star import DetectedStar
 
 
-def render_heatmaps(image, matched_candidates, output_dir: Path):
+def render_heatmaps(image, matched_candidates: list[DetectedStar], output_dir: Path):
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -14,11 +15,12 @@ def render_heatmaps(image, matched_candidates, output_dir: Path):
         print("No candidates to generate heatmaps.")
         return
 
-    x_coords = [src["x"] for src in matched_candidates]
-    y_coords = [src["y"] for src in matched_candidates]
-    flux_values = [src["flux"] for src in matched_candidates]
+    x_coords = [src.x for src in matched_candidates]
+    y_coords = [src.y for src in matched_candidates]
+    flux_values = [src.flux for src in matched_candidates]
 
     heatmap_path = output_dir / REPORTS_STARS_HEATMAP_PATH
+
     generate_heatmap(
         x_coords,
         y_coords,
@@ -33,10 +35,16 @@ def render_heatmaps(image, matched_candidates, output_dir: Path):
 
 
 def generate_heatmap(
-    x_coords, y_coords, values, image_shape, output_path, bins=50, title="Heatmap"
+    x_coords,
+    y_coords,
+    values,
+    image_shape,
+    output_path,
+    bins=50,
+    title="Heatmap",
 ):
 
-    heatmap, xedges, yedges = np.histogram2d(
+    heatmap, _, _ = np.histogram2d(
         x_coords, y_coords, bins=bins, weights=values
     )
 
@@ -48,7 +56,12 @@ def generate_heatmap(
 
     plt.figure(figsize=(10, 8))
 
-    plt.imshow(heatmap.T, origin="lower", cmap="inferno", interpolation="nearest")
+    plt.imshow(
+        heatmap.T,
+        origin="lower",
+        cmap="inferno",
+        interpolation="nearest",
+    )
 
     plt.colorbar(label="value")
     plt.title(title)

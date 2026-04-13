@@ -15,8 +15,10 @@ from tasks.stars.constants import (
     REPORTS_REGION_MAP_PATH,
 )
 
+from tasks.stars.detected_star import DetectedStar
 
-def render_region_map(image, matched_candidates, output_dir: Path):
+
+def render_region_map(image, matched_candidates: list[DetectedStar], output_dir: Path):
 
     output_dir.mkdir(parents=True, exist_ok=True)
     map_path = output_dir / REPORTS_STARS_MAP_PATH
@@ -29,21 +31,18 @@ def render_region_map(image, matched_candidates, output_dir: Path):
     ax.set_ylim(0, image.shape[0])
 
     for candidate in matched_candidates:
-        x_star = candidate["x"]
-        y_star = candidate["y"]
-
-        object_id = candidate.get("object_id", CANDIDATE_NOT_FOUND_STRING)
+        object_id = candidate.object_id or CANDIDATE_NOT_FOUND_STRING
 
         if object_id != CANDIDATE_NOT_FOUND_STRING:
-            ax.plot(x_star, y_star, marker=".", color="white", markersize=6)
+            ax.plot(candidate.x, candidate.y, marker=".", color="white", markersize=6)
 
-        otype = candidate.get("otype", "Default")
+        otype = candidate.otype or "Default"
         group = map_to_group(otype)
         symbol_info = TYPE_SYMBOLS.get(group, TYPE_SYMBOLS["Default"])
 
         ax.plot(
-            x_star,
-            y_star,
+            candidate.x,
+            candidate.y,
             marker=symbol_info["marker"],
             color=symbol_info["color"],
             markersize=8,

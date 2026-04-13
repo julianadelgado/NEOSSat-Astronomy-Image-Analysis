@@ -1,25 +1,32 @@
 from pathlib import Path
 
-from matplotlib import pyplot as plt # noqa: E402
+from matplotlib import pyplot as plt  # noqa: E402
 
-from tasks.stars.constants import CANDIDATE_NOT_FOUND_STRING, FILTERS, REPORTS_MAGNITUDE_PLOT_PATH
+from tasks.stars.constants import (
+    CANDIDATE_NOT_FOUND_STRING,
+    FILTERS,
+    REPORTS_MAGNITUDE_PLOT_PATH,
+)
+
+from tasks.stars.detected_star import DetectedStar
 
 
-def render_magnitude_plot(matched_candidates, output_dir: Path):
+def render_magnitude_plot(matched_candidates: list[DetectedStar], output_dir: Path):
 
     matched_objects = [
-        c for c in matched_candidates if c["object_id"] != CANDIDATE_NOT_FOUND_STRING
+        c for c in matched_candidates if c.object_id != CANDIDATE_NOT_FOUND_STRING
     ]
 
     if not matched_objects:
         print("No matched stars to plot magnitudes.")
         return
 
-    object_ids = [c["object_id"] for c in matched_objects]
-    mag_obs = [c.get("magnitude") for c in matched_objects]
+    object_ids = [c.object_id for c in matched_objects]
+    mag_obs = [c.magnitude_obs for c in matched_objects]
 
     sim_mags = {
-        f: [c.get(f"sim_{f.lower()}") for c in matched_objects] for f in FILTERS
+        f: [getattr(c, f"mag_{f.lower()}") for c in matched_objects]
+        for f in FILTERS
     }
 
     fig, ax = plt.subplots(figsize=(max(12, len(object_ids) * 0.5), 6))
@@ -51,6 +58,7 @@ def render_magnitude_plot(matched_candidates, output_dir: Path):
 
     output_dir.mkdir(parents=True, exist_ok=True)
     plot_path = output_dir / REPORTS_MAGNITUDE_PLOT_PATH
+
     plt.tight_layout()
     plt.savefig(plot_path, dpi=300, bbox_inches="tight")
     plt.close(fig)

@@ -1,11 +1,9 @@
 from pathlib import Path
 
-import astropy.units as units
 import matplotlib
 import numpy as np
 from astropy.wcs import WCS
 
-from cli.config import load_config
 from processing.core.processor import IProcessor
 from tasks.stars.exports.heatmap_exporter import render_heatmaps
 from services.simbad.simbad_service import query_simbad_skycoord
@@ -45,11 +43,15 @@ class StarDetection(IProcessor):
 
         detected_candidates = detect_sources(image, wcs, header)
 
+        initial_count = len(detected_candidates)
+
         detected_candidates = [
-            src for src in detected_candidates if src["flux"] >= FLUX_THRESHOLD
+            src for src in detected_candidates if src.flux >= FLUX_THRESHOLD
         ]
 
-        print(f"Filtered {len(detected_candidates) - len(detected_candidates)} faint candidates based on flux")
+        filtered_count = initial_count - len(detected_candidates)
+
+        print(f"Filtered {filtered_count} faint candidates based on flux")
 
         if len(detected_candidates) == 0:
             return {"stars_detected": 0}

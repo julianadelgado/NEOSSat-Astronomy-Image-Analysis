@@ -3,6 +3,8 @@ from astropy.coordinates import SkyCoord
 from astropy.stats import sigma_clipped_stats
 from photutils.detection import DAOStarFinder
 from sklearn.cluster import DBSCAN
+from typing import List
+
 from tasks.stars.constants import (
     SIGMA,
     DAO_FINDER_FWHM,
@@ -12,17 +14,21 @@ from tasks.stars.constants import (
     MATCH_THRESHOLD_DEFAULT,
     MATCH_THRESHOLD_BRIGHT,
     CANDIDATE_NOT_FOUND_STRING,
-    FILTERS,
 )
 
+from tasks.stars.detected_star import DetectedStar
 
-def detect_sources(image: np.ndarray, wcs, header):
+
+def detect_sources(image: np.ndarray, wcs, header) -> List[DetectedStar]:
 
     mean, median, std = sigma_clipped_stats(image, sigma=SIGMA)
-    daofind = DAOStarFinder(fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std)
+    daofind = DAOStarFinder(
+        fwhm=DAO_FINDER_FWHM,
+        threshold=DAO_FINDER_THRESHOLD * std
+    )
 
     sources = daofind(image - median)
-    detected_candidates = []
+    detected_candidates: List[DetectedStar] = []
 
     if sources is None or len(sources) == 0:
         print("DAOStarFinder - No sources found.")
@@ -41,6 +47,7 @@ def detect_sources(image: np.ndarray, wcs, header):
 
     for cluster_label in np.unique(clustering.labels_):
         cluster_indices = np.where(clustering.labels_ == cluster_label)[0]
+
         x_mean = np.mean(x_coord[cluster_indices])
         y_mean = np.mean(y_coord[cluster_indices])
         flux_sum = np.sum(flux[cluster_indices])
@@ -48,18 +55,17 @@ def detect_sources(image: np.ndarray, wcs, header):
 
         try:
             magnitude = -2.5 * np.log10(flux_sum / exptime * gain) + zp
-        except:
+        except Exception:
             magnitude = None
 
         detected_candidates.append(
-            {
-                "x": float(x_mean),
-                "y": float(y_mean),
-                "coord": world_coord,
-                "flux": float(flux_sum),
-                "magnitude": float(magnitude) if magnitude is not None else None,
-                "saturated": False,
-            }
+            DetectedStar(
+                x=float(x_mean),
+                y=float(y_mean),
+                coord=world_coord,
+                flux=float(flux_sum),
+                magnitude_obs=float(magnitude) if magnitude is not None else None,
+            )
         )
 
     saturation_threshold = np.percentile(image, SATURATION_PERCENTILE)
@@ -69,94 +75,117 @@ def detect_sources(image: np.ndarray, wcs, header):
         from scipy.ndimage import label, center_of_mass
 
         labeled, n_objects = label(saturated_mask)
+
         for i in range(1, n_objects + 1):
             mask_i = labeled == i
             y_c, x_c = center_of_mass(mask_i)
+
             world_coord = wcs.pixel_to_world(x_c, y_c)
             flux_sum = np.sum(image[mask_i])
 
             try:
                 magnitude = -2.5 * np.log10(flux_sum / exptime * gain) + zp
-            except:
+            except Exception:
                 magnitude = None
 
             detected_candidates.append(
-                {
-                    "x": float(x_c),
-                    "y": float(y_c),
-                    "coord": world_coord,
-                    "flux": float(flux_sum),
-                    "magnitude": float(magnitude) if magnitude is not None else None,
-                    "saturated": True,
-                }
+                DetectedStar(
+                    x=float(x_c),
+                    y=float(y_c),
+                    coord=world_coord,
+                    flux=float(flux_sum),
+                    magnitude_obs=float(magnitude) if magnitude is not None else None,
+                )
             )
 
     print(f"Stars detected: {len(detected_candidates)}")
     return detected_candidates
 
 
-def match_candidates(detected_candidates, region_catalog):
+def match_candidates(
+    detected_candidates: List[DetectedStar],
+    region_catalog
+) -> List[DetectedStar]:
 
     if len(detected_candidates) == 0:
         return []
 
     if len(region_catalog) == 0:
-        return [
-            {
-                **src,
-                "object_id": CANDIDATE_NOT_FOUND_STRING,
-                "otype": "Default",
-                "deviation_arcsec": None,
-                **{f"sim_{f.lower()}": None for f in FILTERS},
-            }
-            for src in detected_candidates
-        ]
+        for src in detected_candidates:
+            src.object_id = CANDIDATE_NOT_FOUND_STRING
+            src.otype = "Default"
+            src.deviation_arcsec = None
+        return detected_candidates
 
-    detected_coords = SkyCoord([src["coord"] for src in detected_candidates])
+    detected_coords = SkyCoord([src.coord for src in detected_candidates])
     catalog_coords = SkyCoord([obj.coord for obj in region_catalog])
 
     idx, sep2d, _ = detected_coords.match_to_catalog_sky(catalog_coords)
 
-    matched_candidates = []
     magnitudes_obs = []
+
+    flux_values = [src.flux for src in detected_candidates]
+    percentile_99 = np.percentile(flux_values, 99)
 
     for i, src in enumerate(detected_candidates):
 
-        sep_threshold = MATCH_THRESHOLD_BRIGHT if src["flux"] > np.percentile([c["flux"] for c in detected_candidates], 99) else MATCH_THRESHOLD_DEFAULT
+        sep_threshold = (
+            MATCH_THRESHOLD_BRIGHT
+            if src.flux > percentile_99
+            else MATCH_THRESHOLD_DEFAULT
+        )
+
         separation = sep2d[i]
 
         if separation < sep_threshold:
             matched_obj = region_catalog[idx[i]]
-            matched_candidates.append({
-                **src,
-                "object_id": matched_obj.object_id,
-                "otype": getattr(matched_obj, "otype", "Default"),
-                "deviation_arcsec": separation.arcsec,
-                **{
-                    f"sim_{f.lower()}": getattr(matched_obj, f"mag_{f.lower()}_val", None)
-                    for f in FILTERS
-                },
-            })
-        else:
-            matched_candidates.append({
-                **src,
-                "object_id": CANDIDATE_NOT_FOUND_STRING,
-                "otype": "Default",
-                "deviation_arcsec": separation.arcsec,
-                **{f"sim_{f.lower()}": None for f in FILTERS},
-            })
 
-        if src.get("magnitude") is not None:
-            magnitudes_obs.append(src["magnitude"])
+            src.object_id = matched_obj.object_id
+            src.otype = getattr(matched_obj, "otype", "Default")
+            src.deviation_arcsec = separation.arcsec
+
+            src.mag_b = getattr(matched_obj, "mag_b_val", None)
+            src.mag_v = getattr(matched_obj, "mag_v_val", None)
+            src.mag_r = getattr(matched_obj, "mag_r_val", None)
+            src.mag_j = getattr(matched_obj, "mag_j_val", None)
+            src.mag_h = getattr(matched_obj, "mag_h_val", None)
+            src.mag_k = getattr(matched_obj, "mag_k_val", None)
+
+        else:
+            src.object_id = CANDIDATE_NOT_FOUND_STRING
+            src.otype = "Default"
+            src.deviation_arcsec = separation.arcsec
+
+        if src.magnitude_obs is not None:
+            magnitudes_obs.append(src.magnitude_obs)
+
 
     if magnitudes_obs:
-        print(f"Observed magnitudes: min={min(magnitudes_obs):.2f}, max={max(magnitudes_obs):.2f}")
+        print(
+            f"Observed magnitudes: "
+            f"min={min(magnitudes_obs):.2f}, "
+            f"max={max(magnitudes_obs):.2f}"
+        )
 
-    sim_mags = [obj.mag_v_val for obj in region_catalog if obj.mag_v_val is not None]
+    sim_mags = [
+        obj.mag_v_val
+        for obj in region_catalog
+        if obj.mag_v_val is not None
+    ]
+
     if sim_mags:
-        print(f"SIMBAD catalog magnitudes (V): min={min(sim_mags):.2f}, max={max(sim_mags):.2f}")
+        print(
+            f"SIMBAD catalog magnitudes (V): "
+            f"min={min(sim_mags):.2f}, "
+            f"max={max(sim_mags):.2f}"
+        )
         print(f"Number of expected stars in frame: {len(sim_mags)}")
 
-    print(f"Matched {sum(1 for c in matched_candidates if c['object_id'] != CANDIDATE_NOT_FOUND_STRING)} candidates with catalog objects.")
+    matched_count = sum(
+        1 for c in detected_candidates
+        if c.object_id != CANDIDATE_NOT_FOUND_STRING
+    )
 
-    return matched_candidates
+    print(f"Matched {matched_count} candidates with catalog objects.")
+
+    return detected_candidates

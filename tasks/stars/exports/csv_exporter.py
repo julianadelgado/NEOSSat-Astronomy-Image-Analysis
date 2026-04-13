@@ -1,9 +1,10 @@
 import csv
 from pathlib import Path
-from tasks.stars.constants import CANDIDATE_NOT_FOUND_STRING, FILTERS
+from tasks.stars.constants import FILTERS
+from tasks.stars.detected_star import DetectedStar
 
 
-def export_results(matched_candidates, output_dir: Path):
+def export_results(matched_candidates: list[DetectedStar], output_dir: Path):
 
     output_dir.mkdir(parents=True, exist_ok=True)
     csv_path = output_dir / "star_detection_results.csv"
@@ -32,16 +33,16 @@ def export_results(matched_candidates, output_dir: Path):
             writer.writerow(
                 [
                     i,
-                    candidate["x"],
-                    candidate["y"],
-                    candidate["coord"].ra.deg,
-                    candidate["coord"].dec.deg,
-                    candidate["flux"],
-                    candidate.get("magnitude"),
-                    candidate.get("object_id", CANDIDATE_NOT_FOUND_STRING),
-                    candidate.get("otype", "Default"),
-                    candidate.get("deviation_arcsec", CANDIDATE_NOT_FOUND_STRING),
-                    *[candidate.get(f"sim_{f.lower()}") for f in FILTERS],
+                    candidate.x,
+                    candidate.y,
+                    candidate.coord.ra.deg,
+                    candidate.coord.dec.deg,
+                    candidate.flux,
+                    candidate.magnitude_obs,
+                    candidate.object_id,
+                    candidate.otype,
+                    candidate.deviation_arcsec,
+                    *[getattr(candidate, f"mag_{f.lower()}") for f in FILTERS],
                 ]
             )
 
