@@ -4,7 +4,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 
-from matplotlib import pyplot as plt  # noqa: E402
+from matplotlib import pyplot as plt
+from matplotlib.lines import Line2D
+
 from tasks.stars.map_groups import map_to_group
 
 from tasks.stars.constants import (
@@ -16,6 +18,30 @@ from tasks.stars.constants import (
 )
 
 from tasks.stars.detected_star import DetectedStar
+
+
+def _build_legend(ax, seen_groups):
+    legend_elements = [
+        Line2D(
+            [0],
+            [0],
+            marker=info["marker"],
+            color=info["color"],
+            label=group,
+            markersize=8,
+            fillstyle="none",
+            linewidth=0,
+        )
+        for group, info in TYPE_SYMBOLS.items()
+        if group in seen_groups
+    ]
+
+    ax.legend(
+        handles=legend_elements,
+        facecolor="black",
+        labelcolor="white",
+        loc="upper right",
+    )
 
 
 def render_region_map(image, matched_candidates: list[DetectedStar], output_dir: Path):
@@ -50,6 +76,9 @@ def render_region_map(image, matched_candidates: list[DetectedStar], output_dir:
             fillstyle="none",
             linewidth=1.5,
         )
+
+    seen_groups = {map_to_group(c.otype or "Default") for c in matched_candidates}
+    _build_legend(ax, seen_groups)
 
     plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)
     plt.close(fig)
@@ -89,6 +118,9 @@ def render_region_catalog_map(image, wcs, region_catalog, output_dir: Path):
             fillstyle="none",
             linewidth=1.5,
         )
+
+    seen_groups = {map_to_group(getattr(obj, "otype", "Default")) for obj in region_catalog}
+    _build_legend(ax, seen_groups)
 
     plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)
     plt.close(fig)
