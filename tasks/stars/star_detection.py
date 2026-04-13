@@ -17,6 +17,7 @@ from tasks.stars.heatmap import generate_heatmap
 from tasks.stars.map_groups import map_to_group
 from services.simbad.simbad_service import query_simbad_skycoord
 from tasks.stars.detection.region_identifier import get_image_region
+from tasks.stars.detection.source_identifier import detect_sources
 
 matplotlib.use("Agg")
 
@@ -77,7 +78,7 @@ class StarDetection(IProcessor):
             image=image, wcs=wcs, region_catalog=region_catalog, output_dir=output_dir
         )
 
-        detected_candidates = self._detect_sources(image, wcs, header)
+        detected_candidates = detect_sources(image, wcs, header)
 
         FLUX_THRESHOLD = 1.05
         detected_candidates = [
@@ -101,80 +102,6 @@ class StarDetection(IProcessor):
         self._generate_report(output_dir, {"stars_detected": len(matched_candidates)})
 
         return {"stars_detected": len(matched_candidates)}
-
-    def _detect_sources(self, image: np.ndarray, wcs, header):
-
-        mean, median, std = sigma_clipped_stats(image, sigma=SIGMA)
-        daofind = DAOStarFinder(fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std)
-
-        sources = daofind(image - median)
-        detected_candidates = []
-
-        if sources is None or len(sources) == 0:
-            print("DAOStarFinder - No sources found.")
-            return []
-
-        exptime = header.get("EXPOSURE", header.get("AEXPTIME", 1.0))
-        gain = float(header.get("GAIN", 1.0))
-        zp = 25.0
-
-        x_coord = sources["xcentroid"]
-        y_coord = sources["ycentroid"]
-        flux = sources["flux"]
-
-        coords_array = np.column_stack((x_coord, y_coord))
-        clustering = DBSCAN(eps=CLUSTER_EPS, min_samples=1).fit(coords_array)
-
-        for cluster_label in np.unique(clustering.labels_):
-            cluster_indices = np.where(clustering.labels_ == cluster_label)[0]
-            x_mean = np.mean(x_coord[cluster_indices])
-            y_mean = np.mean(y_coord[cluster_indices])
-            flux_sum = np.sum(flux[cluster_indices])
-            world_coord = wcs.pixel_to_world(x_mean, y_mean)
-
-            try:
-                magnitude = -2.5 * np.log10(flux_sum / exptime * gain) + zp
-            except:
-                magnitude = None
-
-            detected_candidates.append({
-                "x": float(x_mean),
-                "y": float(y_mean),
-                "coord": world_coord,
-                "flux": float(flux_sum),
-                "magnitude": float(magnitude) if magnitude is not None else None,
-                "saturated": False
-            })
-
-        saturation_threshold = np.percentile(image, SATURATION_PERCENTILE)
-        saturated_mask = image >= saturation_threshold
-
-        if np.any(saturated_mask):
-            from scipy.ndimage import label, center_of_mass
-
-            labeled, n_objects = label(saturated_mask)
-            for i in range(1, n_objects + 1):
-                mask_i = labeled == i
-                y_c, x_c = center_of_mass(mask_i)
-                world_coord = wcs.pixel_to_world(x_c, y_c)
-                flux_sum = np.sum(image[mask_i])
-
-                try:
-                    magnitude = -2.5 * np.log10(flux_sum / exptime * gain) + zp
-                except:
-                    magnitude = None
-
-                detected_candidates.append({
-                    "x": float(x_c),
-                    "y": float(y_c),
-                    "coord": world_coord,
-                    "flux": float(flux_sum),
-                    "magnitude": float(magnitude) if magnitude is not None else None,
-                    "saturated": True
-                })
-
-        print(f"Stars detected: {len(detected_candidates)}")
-        return detected_candidates
 
     def _match_candidates(self, detected_candidates, region_catalog):
 
