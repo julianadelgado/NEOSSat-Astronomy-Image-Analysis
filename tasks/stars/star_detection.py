@@ -16,6 +16,7 @@ from services.report_service import ReportData, ReportSection, ReportService
 from tasks.stars.heatmap import generate_heatmap
 from tasks.stars.map_groups import map_to_group
 from services.simbad.simbad_service import query_simbad_skycoord
+from tasks.stars.detection.region_identifier import get_image_region
 
 matplotlib.use("Agg")
 
@@ -65,7 +66,7 @@ class StarDetection(IProcessor):
 
         wcs = WCS(header)
 
-        center, radius = self._get_image_region(image, wcs)
+        center, radius = get_image_region(image, wcs)
 
         output_dir.mkdir(parents=True, exist_ok=True)
         csv_path = output_dir / "simbad_request_results.csv"
@@ -100,25 +101,6 @@ class StarDetection(IProcessor):
         self._generate_report(output_dir, {"stars_detected": len(matched_candidates)})
 
         return {"stars_detected": len(matched_candidates)}
-
-    def _get_image_region(self, image: np.ndarray, wcs: WCS):
-
-        height, width = image.shape
-        x_corners = [0, width, 0, width]
-        y_corners = [0, 0, height, height]
-
-        corner_coords = wcs.pixel_to_world(x_corners, y_corners)
-
-        center = SkyCoord(ra=np.mean(corner_coords.ra), dec=np.mean(corner_coords.dec))
-
-        print(f"Image region center: RA={center.ra.deg:.4f} deg, Dec={center.dec.deg:.4f} deg")
-
-        separations = center.separation(corner_coords)
-        radius = separations.max()
-
-        print(f"Image region radius: {radius.arcmin:.2f} arcmin")
-
-        return center, radius
 
     def _detect_sources(self, image: np.ndarray, wcs, header):
 
