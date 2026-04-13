@@ -1,5 +1,33 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+
+
+def render_heatmaps(image, matched_candidates, output_dir: Path):
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    if len(matched_candidates) == 0:
+        print("No candidates to generate heatmaps.")
+        return
+
+    x_coords = [src["x"] for src in matched_candidates]
+    y_coords = [src["y"] for src in matched_candidates]
+    flux_values = [src["flux"] for src in matched_candidates]
+
+    heatmap_path = output_dir / "candidates_heatmap.png"
+    generate_heatmap(
+        x_coords,
+        y_coords,
+        flux_values,
+        image.shape,
+        heatmap_path,
+        bins=50,
+        title="Detected Stars Heatmap",
+    )
+
+    print(f"Heatmap of detected stars saved to {heatmap_path}")
 
 
 def generate_heatmap(

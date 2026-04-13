@@ -1,4 +1,3 @@
-import csv
 from pathlib import Path
 
 import astropy.units as units
@@ -9,8 +8,7 @@ from astropy.wcs import WCS
 from cli.config import load_config
 from processing.core.processor import IProcessor
 from services.report_service import ReportData, ReportSection, ReportService
-from tasks.stars.heatmap import generate_heatmap
-from tasks.stars.map_groups import map_to_group
+from tasks.stars.exports.heatmap_exporter import render_heatmaps
 from services.simbad.simbad_service import query_simbad_skycoord
 from tasks.stars.detection.region_identifier import get_image_region
 
@@ -97,37 +95,12 @@ class StarDetection(IProcessor):
 
         render_region_image(image, wcs, matched_candidates, output_dir)
         render_region_map(image, matched_candidates, output_dir)
-        self._render_heatmaps(image, matched_candidates, output_dir)
+        render_heatmaps(image, matched_candidates, output_dir)
         self._render_magnitude_plot(matched_candidates, output_dir)
 
         self._generate_report(output_dir, {"stars_detected": len(matched_candidates)})
 
         return {"stars_detected": len(matched_candidates)}
-
-    def _render_heatmaps(self, image, matched_candidates, output_dir: Path):
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        if len(matched_candidates) == 0:
-            print("No candidates to generate heatmaps.")
-            return
-
-        x_coords = [src["x"] for src in matched_candidates]
-        y_coords = [src["y"] for src in matched_candidates]
-        flux_values = [src["flux"] for src in matched_candidates]
-
-        heatmap_path = output_dir / "candidates_heatmap.png"
-        generate_heatmap(
-            x_coords,
-            y_coords,
-            flux_values,
-            image.shape,
-            heatmap_path,
-            bins=50,
-            title="Detected Stars Heatmap",
-        )
-
-        print(f"Heatmap of detected stars saved to {heatmap_path}")
 
     def _render_magnitude_plot(self, matched_candidates, output_dir: Path):
 
