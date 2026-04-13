@@ -15,6 +15,9 @@ from services.simbad.simbad_service import query_simbad_skycoord
 from tasks.stars.detection.region_identifier import get_image_region
 
 from tasks.stars.detection.source_identifier import detect_sources, match_candidates
+from tasks.stars.exports.csv_exporter import export_results
+
+from tasks.stars.constants import FLUX_THRESHOLD
 
 matplotlib.use("Agg")
 
@@ -77,7 +80,6 @@ class StarDetection(IProcessor):
 
         detected_candidates = detect_sources(image, wcs, header)
 
-        FLUX_THRESHOLD = 1.05
         detected_candidates = [
             src for src in detected_candidates if src["flux"] >= FLUX_THRESHOLD
         ]
@@ -89,7 +91,7 @@ class StarDetection(IProcessor):
 
         matched_candidates = match_candidates(detected_candidates, region_catalog)
 
-        self._export_results(matched_candidates, output_dir)
+        export_results(matched_candidates, output_dir)
 
         self._render_region_image(image, wcs, detected_candidates, matched_candidates, output_dir)
         self._render_region_map(image, wcs, detected_candidates, matched_candidates, output_dir)
@@ -99,43 +101,6 @@ class StarDetection(IProcessor):
         self._generate_report(output_dir, {"stars_detected": len(matched_candidates)})
 
         return {"stars_detected": len(matched_candidates)}
-
-    def _export_results(self, matched_candidates, output_dir: Path):
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-        csv_path = output_dir / "star_detection_results.csv"
-
-        with open(csv_path, mode="w", newline="") as file:
-
-            writer = csv.writer(file)
-
-            writer.writerow(
-                [
-                    "id", "x_pixel", "y_pixel", "ra_deg", "dec_deg",
-                    "flux", "magnitude_obs",
-                    "object_id", "otype", "deviation_arcsec",
-                    *[f"mag_{f.lower()}_simbad" for f in FILTERS],
-                ]
-            )
-
-            for i, candidate in enumerate(matched_candidates):
-                writer.writerow(
-                    [
-                        i,
-                        candidate["x"],
-                        candidate["y"],
-                        candidate["coord"].ra.deg,
-                        candidate["coord"].dec.deg,
-                        candidate["flux"],
-                        candidate.get("magnitude"),
-                        candidate.get("object_id", CANDIDATE_NOT_FOUND_STRING),
-                        candidate.get("otype", "Default"),
-                        candidate.get("deviation_arcsec", CANDIDATE_NOT_FOUND_STRING),
-                        *[candidate.get(f"sim_{f.lower()}") for f in FILTERS],
-                    ]
-                )
-
-        print(f"Star detection results exported to {csv_path}")
 
     def _render_region_image(self, image, wcs, detected_candidates, matched_candidates, output_dir: Path):
 
