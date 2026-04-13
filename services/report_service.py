@@ -35,7 +35,6 @@ class ReportService:
         self.reports_dir = Path(reports_dir)
         self.sections: List[ReportSection] = []
 
-
     def append(self, section: ReportSection) -> None:
         self.sections.append(section)
 

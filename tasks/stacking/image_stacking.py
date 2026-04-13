@@ -9,9 +9,7 @@ from PIL import Image
 from cli.config import load_config
 from handlers.data_manager import DataManager
 from services.report_service import (
-    ReportData,
     ReportSection,
-    ReportService,
     ReportTable,
 )
 

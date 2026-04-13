@@ -9,9 +9,7 @@ sys.path.append(str(Path(__file__).parent / "dl_streak_detect"))
 from cli.config import load_config
 from processing.processors.fits_to_png import FitsToPng
 from services.report_service import (
-    ReportData,
     ReportSection,
-    ReportService,
     ReportTable,
 )
 from services.satellite_db_service import SatelliteDatabaseService
@@ -337,7 +335,7 @@ class DLStreakDetector:
         return ReportSection(
             title="Streak Detection Results",
             content="Summary of streak detection results.",
-            subsections=sections
+            subsections=sections,
         )
 
     def run(self) -> Dict[str, Any]:

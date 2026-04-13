@@ -11,7 +11,7 @@ from photutils.detection import DAOStarFinder
 
 from cli.config import load_config
 from processing.core.processor import IProcessor
-from services.report_service import ReportData, ReportSection, ReportService
+from services.report_service import ReportSection
 from tasks.stars.heatmap import generate_heatmap
 from tasks.stars.map_groups import map_to_group
 from tasks.stars.queries import query_simbad_skycoord
@@ -90,7 +90,9 @@ class StarDetection(IProcessor):
             image, wcs, detected_candidates, matched_candidates, output_dir
         )
 
-        self._build_report_section(output_dir, {"stars_detected": len(matched_candidates)})
+        self._build_report_section(
+            output_dir, {"stars_detected": len(matched_candidates)}
+        )
 
         return {"stars_detected": len(matched_candidates)}
 

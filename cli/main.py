@@ -123,7 +123,11 @@ def main(
                         downloader.download_images_to_directory(clean_name)
                         preprocessor = ImageStacking(clean_name, data_manager, date_obs)
                         preprocessor.stack_images()
-                        report_service.append(preprocessor._build_report_section(preprocessor.stacked_images))
+                        report_service.append(
+                            preprocessor._build_report_section(
+                                preprocessor.stacked_images
+                            )
+                        )
                         print(f"Cleaning up temporary folder: {clean_name} ")
                         shutil.rmtree(clean_name)
                     data_manager.fits_image.close()
@@ -138,7 +142,9 @@ def main(
                     image = fits.getdata(fits_path)
                     header = fits.getheader(fits_path)
                     results = detector.run(image, header, output_dir)
-                    report_service.append(detector._build_report_section(output_dir, results))
+                    report_service.append(
+                        detector._build_report_section(output_dir, results)
+                    )
             else:
                 print(
                     f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}"
@@ -152,7 +158,11 @@ def main(
         print("Running streak detection on directory...")
         detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
         detector.run()
-        report_service.append(detector._build_report_section(detector.results_summary, detector.result_dir))
+        report_service.append(
+            detector._build_report_section(
+                detector.results_summary, detector.result_dir
+            )
+        )
 
     report_service.flush("NEOSSat Analysis")
 
