@@ -10,7 +10,7 @@ from tasks.stars.constants import FIGSIZE, CANDIDATE_NOT_FOUND_STRING, VMAX_PERC
 
 
 def render_region_image(
-    image, wcs, detected_candidates, matched_candidates, output_dir: Path
+    image, wcs, matched_candidates, output_dir: Path
 ):
 
     output_dir.mkdir(parents=True, exist_ok=True)
