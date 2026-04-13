@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from astropy.coordinates import SkyCoord
 from typing import Optional
+
+from astropy.coordinates import SkyCoord
 
 
 @dataclass

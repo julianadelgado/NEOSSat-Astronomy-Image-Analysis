@@ -7,7 +7,6 @@ from tasks.stars.constants import (
     FILTERS,
     REPORTS_MAGNITUDE_PLOT_PATH,
 )
-
 from tasks.stars.detected_star import DetectedStar
 
 
@@ -25,8 +24,7 @@ def render_magnitude_plot(matched_candidates: list[DetectedStar], output_dir: Pa
     mag_obs = [c.magnitude_obs for c in matched_objects]
 
     sim_mags = {
-        f: [getattr(c, f"mag_{f.lower()}") for c in matched_objects]
-        for f in FILTERS
+        f: [getattr(c, f"mag_{f.lower()}") for c in matched_objects] for f in FILTERS
     }
 
     fig, ax = plt.subplots(figsize=(max(12, len(object_ids) * 0.5), 6))

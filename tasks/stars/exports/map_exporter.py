@@ -1,23 +1,20 @@
 from pathlib import Path
 
 import matplotlib
-
-matplotlib.use("Agg")
-
 from matplotlib import pyplot as plt
 from matplotlib.lines import Line2D
 
+from tasks.stars.constants import (
+    CANDIDATE_NOT_FOUND_STRING,
+    FIGSIZE,
+    REPORTS_REGION_MAP_PATH,
+    REPORTS_STARS_MAP_PATH,
+    TYPE_SYMBOLS,
+)
+from tasks.stars.detected_star import DetectedStar
 from tasks.stars.map_groups import map_to_group
 
-from tasks.stars.constants import (
-    FIGSIZE,
-    CANDIDATE_NOT_FOUND_STRING,
-    TYPE_SYMBOLS,
-    REPORTS_STARS_MAP_PATH,
-    REPORTS_REGION_MAP_PATH,
-)
-
-from tasks.stars.detected_star import DetectedStar
+matplotlib.use("Agg")
 
 
 def _build_legend(ax, seen_groups):
@@ -119,7 +116,9 @@ def render_region_catalog_map(image, wcs, region_catalog, output_dir: Path):
             linewidth=1.5,
         )
 
-    seen_groups = {map_to_group(getattr(obj, "otype", "Default")) for obj in region_catalog}
+    seen_groups = {
+        map_to_group(getattr(obj, "otype", "Default")) for obj in region_catalog
+    }
     _build_legend(ax, seen_groups)
 
     plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)

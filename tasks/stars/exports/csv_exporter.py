@@ -1,5 +1,6 @@
 import csv
 from pathlib import Path
+
 from tasks.stars.constants import FILTERS
 from tasks.stars.detected_star import DetectedStar
 

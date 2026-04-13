@@ -1,31 +1,28 @@
+from typing import List
+
 import numpy as np
 from astropy.coordinates import SkyCoord
 from astropy.stats import sigma_clipped_stats
 from photutils.detection import DAOStarFinder
 from sklearn.cluster import DBSCAN
-from typing import List
 
 from tasks.stars.constants import (
-    SIGMA,
+    CANDIDATE_NOT_FOUND_STRING,
+    CLUSTER_EPS,
     DAO_FINDER_FWHM,
     DAO_FINDER_THRESHOLD,
-    CLUSTER_EPS,
-    SATURATION_PERCENTILE,
-    MATCH_THRESHOLD_DEFAULT,
     MATCH_THRESHOLD_BRIGHT,
-    CANDIDATE_NOT_FOUND_STRING,
+    MATCH_THRESHOLD_DEFAULT,
+    SATURATION_PERCENTILE,
+    SIGMA,
 )
-
 from tasks.stars.detected_star import DetectedStar
 
 
 def detect_sources(image: np.ndarray, wcs, header) -> List[DetectedStar]:
 
     mean, median, std = sigma_clipped_stats(image, sigma=SIGMA)
-    daofind = DAOStarFinder(
-        fwhm=DAO_FINDER_FWHM,
-        threshold=DAO_FINDER_THRESHOLD * std
-    )
+    daofind = DAOStarFinder(fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std)
 
     sources = daofind(image - median)
     detected_candidates: List[DetectedStar] = []
@@ -72,7 +69,7 @@ def detect_sources(image: np.ndarray, wcs, header) -> List[DetectedStar]:
     saturated_mask = image >= saturation_threshold
 
     if np.any(saturated_mask):
-        from scipy.ndimage import label, center_of_mass
+        from scipy.ndimage import center_of_mass, label
 
         labeled, n_objects = label(saturated_mask)
 
@@ -103,8 +100,7 @@ def detect_sources(image: np.ndarray, wcs, header) -> List[DetectedStar]:
 
 
 def match_candidates(
-    detected_candidates: List[DetectedStar],
-    region_catalog
+    detected_candidates: List[DetectedStar], region_catalog
 ) -> List[DetectedStar]:
 
     if len(detected_candidates) == 0:
@@ -159,7 +155,6 @@ def match_candidates(
         if src.magnitude_obs is not None:
             magnitudes_obs.append(src.magnitude_obs)
 
-
     if magnitudes_obs:
         print(
             f"Observed magnitudes: "
@@ -167,11 +162,7 @@ def match_candidates(
             f"max={max(magnitudes_obs):.2f}"
         )
 
-    sim_mags = [
-        obj.mag_v_val
-        for obj in region_catalog
-        if obj.mag_v_val is not None
-    ]
+    sim_mags = [obj.mag_v_val for obj in region_catalog if obj.mag_v_val is not None]
 
     if sim_mags:
         print(
@@ -182,8 +173,7 @@ def match_candidates(
         print(f"Number of expected stars in frame: {len(sim_mags)}")
 
     matched_count = sum(
-        1 for c in detected_candidates
-        if c.object_id != CANDIDATE_NOT_FOUND_STRING
+        1 for c in detected_candidates if c.object_id != CANDIDATE_NOT_FOUND_STRING
     )
 
     print(f"Matched {matched_count} candidates with catalog objects.")

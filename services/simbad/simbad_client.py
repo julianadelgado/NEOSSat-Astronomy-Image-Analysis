@@ -1,6 +1,5 @@
-from astroquery.simbad import Simbad
-import astropy.units as units
 from astropy.coordinates import SkyCoord
+from astroquery.simbad import Simbad
 
 
 def query_region(center: SkyCoord, radius):

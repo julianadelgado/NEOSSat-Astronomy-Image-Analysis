@@ -44,9 +44,7 @@ def generate_heatmap(
     title="Heatmap",
 ):
 
-    heatmap, _, _ = np.histogram2d(
-        x_coords, y_coords, bins=bins, weights=values
-    )
+    heatmap, _, _ = np.histogram2d(x_coords, y_coords, bins=bins, weights=values)
 
     counts, _, _ = np.histogram2d(x_coords, y_coords, bins=bins)
 

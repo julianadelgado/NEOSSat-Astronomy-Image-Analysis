@@ -9,8 +9,8 @@ from matplotlib.patches import Circle
 from photutils.detection import DAOStarFinder
 
 from processing.core.processor import IProcessor
-from tasks.stars.exports.heatmap_exporter import generate_heatmap
 from services.simbad.simbad_service import query_simbad
+from tasks.stars.exports.heatmap_exporter import generate_heatmap
 
 # simbad_acceptance_radius = 2 * units.arcmin
 simbad_acceptance_radius = 45 * units.arcsec

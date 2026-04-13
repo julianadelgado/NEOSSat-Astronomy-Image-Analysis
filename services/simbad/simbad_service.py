@@ -5,10 +5,9 @@ import astropy.units as units
 from astropy.coordinates import SkyCoord
 
 from services.simbad.simbad_client import (
-    query_region_with_otype,
     query_region_with_filters,
+    query_region_with_otype,
 )
-
 from tasks.stars.catalog.simbad_mapper import (
     map_single_best_match,
     map_skycoord_catalog,
@@ -36,20 +35,25 @@ def query_simbad(coord_string: str, radius: str, output_csv_path: Path = None):
 
             with open(output_csv_path, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow(["main_id", "ra_deg", "dec_deg", "distance_arcsec", "otype"])
-                writer.writerow([
-                    obj.object_id,
-                    obj.ra_deg,
-                    obj.dec_deg,
-                    obj.distance_arcsec,
-                    obj.otype,
-                ])
+                writer.writerow(
+                    ["main_id", "ra_deg", "dec_deg", "distance_arcsec", "otype"]
+                )
+                writer.writerow(
+                    [
+                        obj.object_id,
+                        obj.ra_deg,
+                        obj.dec_deg,
+                        obj.distance_arcsec,
+                        obj.otype,
+                    ]
+                )
 
         return obj
 
     except Exception as e:
         print(f"Erreur pour {coord_string}: {e}")
         import traceback
+
         traceback.print_exc()
         return None
 
@@ -74,7 +78,18 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
             with open(output_csv_path, "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(
-                    ["main_id", "otype", "ra_deg", "dec_deg", "mag_b", "mag_v", "mag_r", "mag_j", "mag_h", "mag_k"]
+                    [
+                        "main_id",
+                        "otype",
+                        "ra_deg",
+                        "dec_deg",
+                        "mag_b",
+                        "mag_v",
+                        "mag_r",
+                        "mag_j",
+                        "mag_h",
+                        "mag_k",
+                    ]
                 )
                 writer.writerows(csv_rows)
 
@@ -83,6 +98,6 @@ def query_simbad_skycoord(center: SkyCoord, radius, output_csv_path: Path = None
     except Exception as e:
         print(f"Error query_simbad_skycoord: {e}")
         import traceback
+
         traceback.print_exc()
         return []
-    

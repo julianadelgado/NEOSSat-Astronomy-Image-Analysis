@@ -5,18 +5,19 @@ import numpy as np
 from astropy.wcs import WCS
 
 from processing.core.processor import IProcessor
-from tasks.stars.exports.heatmap_exporter import render_heatmaps
 from services.simbad.simbad_service import query_simbad_skycoord
+from tasks.stars.constants import FLUX_THRESHOLD
 from tasks.stars.detection.region_identifier import get_image_region
-
 from tasks.stars.detection.source_identifier import detect_sources, match_candidates
 from tasks.stars.exports.csv_exporter import export_results
+from tasks.stars.exports.heatmap_exporter import render_heatmaps
 from tasks.stars.exports.image_exporter import render_region_image
-from tasks.stars.exports.map_exporter import render_region_map, render_region_catalog_map
 from tasks.stars.exports.magnitude_data_exporter import render_magnitude_plot
+from tasks.stars.exports.map_exporter import (
+    render_region_catalog_map,
+    render_region_map,
+)
 from tasks.stars.exports.report_generation import generate_report
-
-from tasks.stars.constants import FLUX_THRESHOLD
 
 matplotlib.use("Agg")
 
