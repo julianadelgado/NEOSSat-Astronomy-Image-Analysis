@@ -32,7 +32,17 @@ class ReportData:
 
 class ReportService:
     def __init__(self, reports_dir: Path):
-        self.reports_dir = reports_dir
+        self.reports_dir = Path(reports_dir)
+        self.sections: List[ReportSection] = []
+
+
+    def append(self, section: ReportSection) -> None:
+        self.sections.append(section)
+
+    def flush(self, task_name: str, filename: Optional[str] = None) -> Path:
+        data = ReportData(task_name=task_name, sections=list(self.sections))
+        self.sections.clear()
+        return self.generate(data, filename)
 
     def generate(self, data: ReportData, filename: Optional[str] = None) -> Path:
         self.reports_dir.mkdir(parents=True, exist_ok=True)

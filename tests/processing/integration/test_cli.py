@@ -1,6 +1,7 @@
 import os
 from unittest.mock import MagicMock, patch
 
+import pytest
 from typer.testing import CliRunner
 
 os.environ.setdefault("smtp_server", "smtp.test")
@@ -10,6 +11,13 @@ os.environ.setdefault("smtp_password", "test_password")
 from cli.main import app  # noqa: E402
 
 runner = CliRunner()
+
+
+@pytest.fixture(autouse=True)
+def mock_report_service():
+    with patch("cli.main.ReportService"):
+        yield
+
 
 valid_dir_patch = patch("cli.validator.os.path.exists", return_value=True)
 listdir_patch = patch("cli.main.os.listdir", return_value=["image.fits"])

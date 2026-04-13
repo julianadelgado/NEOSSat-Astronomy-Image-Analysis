@@ -64,7 +64,8 @@ class ImageStacking:
         PERCENTILE_UPPER_BOUND = 99.9
         original_image_path = self.data_manager.file_path
         all_images = [f for f in os.listdir(self.images_path) if f.endswith(".fits")]
-        stacked_images = []
+        self.stacked_images = []
+        stacked_images = self.stacked_images
 
         data_arrays = []
         reference_data = None
@@ -105,33 +106,21 @@ class ImageStacking:
             output_path = os.path.join(self.results_dir, f"stacked_{self.date_obs}.png")
             stacked_image.save(output_path)
             print(f"Stacked image saved: {output_path}")
-            self._generate_report(stacked_images)
         else:
             print(f"Only one image for date {self.date_obs}, skipping stacking.")
 
-    def _generate_report(self, stacked_images):
-        report_service = ReportService(reports_dir=REPORTS_DIR)
+    def _build_report_section(self, stacked_images) -> ReportSection:
         stacking_table = ReportTable(
             headers=["Observation IDs"],
             rows=[[obs_id] for obs_id in stacked_images],
         )
-
-        report_service.generate(
-            ReportData(
-                task_name="Image Stacking",
-                sections=[
-                    ReportSection(
-                        title=f"Results for {self.date_obs}",
-                        content=f"Stacked image created for date {self.date_obs}.",
-                        images=[
-                            p
-                            for p in [
-                                Path(self.results_dir) / f"stacked_{self.date_obs}.png"
-                            ]
-                            if p.exists()
-                        ],
-                        tables=[stacking_table],
-                    )
-                ],
-            )
+        return ReportSection(
+            title=f"Results for {self.date_obs}",
+            content=f"Stacked image created for date {self.date_obs}.",
+            images=[
+                p
+                for p in [Path(self.results_dir) / f"stacked_{self.date_obs}.png"]
+                if p.exists()
+            ],
+            tables=[stacking_table],
         )
