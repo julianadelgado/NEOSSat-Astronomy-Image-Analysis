@@ -7,15 +7,19 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt  # noqa: E402
 from tasks.stars.map_groups import map_to_group
 
-from tasks.stars.constants import FIGSIZE, CANDIDATE_NOT_FOUND_STRING, TYPE_SYMBOLS
+from tasks.stars.constants import (
+    FIGSIZE,
+    CANDIDATE_NOT_FOUND_STRING,
+    TYPE_SYMBOLS,
+    REPORTS_STARS_MAP_PATH,
+    REPORTS_REGION_MAP_PATH,
+)
 
 
-def render_region_map(
-    image, matched_candidates, output_dir: Path
-):
+def render_region_map(image, matched_candidates, output_dir: Path):
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    map_path = output_dir / "detected_stars_map.png"
+    map_path = output_dir / REPORTS_STARS_MAP_PATH
 
     fig, ax = plt.subplots(figsize=FIGSIZE)
     fig.patch.set_facecolor("black")
@@ -61,7 +65,7 @@ def render_region_catalog_map(image, wcs, region_catalog, output_dir: Path):
         return
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    map_path = output_dir / "region_catalog_map.png"
+    map_path = output_dir / REPORTS_REGION_MAP_PATH
 
     fig, ax = plt.subplots(figsize=FIGSIZE)
     fig.patch.set_facecolor("black")

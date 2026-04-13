@@ -2,7 +2,7 @@ from pathlib import Path
 
 from matplotlib import pyplot as plt # noqa: E402
 
-from tasks.stars.constants import CANDIDATE_NOT_FOUND_STRING, FILTERS
+from tasks.stars.constants import CANDIDATE_NOT_FOUND_STRING, FILTERS, REPORTS_MAGNITUDE_PLOT_PATH
 
 
 def render_magnitude_plot(matched_candidates, output_dir: Path):
@@ -50,7 +50,7 @@ def render_magnitude_plot(matched_candidates, output_dir: Path):
         ax.axhline(max_mag, color="gray", linestyle=":")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    plot_path = output_dir / "magnitudes_plot.png"
+    plot_path = output_dir / REPORTS_MAGNITUDE_PLOT_PATH
     plt.tight_layout()
     plt.savefig(plot_path, dpi=300, bbox_inches="tight")
     plt.close(fig)

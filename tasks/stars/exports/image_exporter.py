@@ -6,15 +6,19 @@ import numpy as np
 matplotlib.use("Agg")
 
 from matplotlib import pyplot as plt  # noqa: E402
-from tasks.stars.constants import FIGSIZE, CANDIDATE_NOT_FOUND_STRING, VMAX_PERCENTILE, VMIN_PERCENTILE
+from tasks.stars.constants import (
+    FIGSIZE,
+    CANDIDATE_NOT_FOUND_STRING,
+    VMAX_PERCENTILE,
+    VMIN_PERCENTILE,
+    REPORTS_STARS_IMAGE_PATH,
+)
 
 
-def render_region_image(
-    image, wcs, matched_candidates, output_dir: Path
-):
+def render_region_image(image, wcs, matched_candidates, output_dir: Path):
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / "detected_stars_img.png"
+    output_path = output_dir / REPORTS_STARS_IMAGE_PATH
 
     fig = plt.figure(figsize=FIGSIZE)
     ax = plt.subplot(projection=wcs)

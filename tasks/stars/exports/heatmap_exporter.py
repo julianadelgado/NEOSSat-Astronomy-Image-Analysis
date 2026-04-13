@@ -3,6 +3,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
+from tasks.stars.constants import REPORTS_STARS_HEATMAP_PATH
+
 
 def render_heatmaps(image, matched_candidates, output_dir: Path):
 
@@ -16,7 +18,7 @@ def render_heatmaps(image, matched_candidates, output_dir: Path):
     y_coords = [src["y"] for src in matched_candidates]
     flux_values = [src["flux"] for src in matched_candidates]
 
-    heatmap_path = output_dir / "candidates_heatmap.png"
+    heatmap_path = output_dir / REPORTS_STARS_HEATMAP_PATH
     generate_heatmap(
         x_coords,
         y_coords,
