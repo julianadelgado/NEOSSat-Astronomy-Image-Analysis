@@ -8,10 +8,7 @@ from PIL import Image
 
 from cli.config import load_config
 from handlers.data_manager import DataManager
-from services.report_service import (
-    ReportSection,
-    ReportTable,
-)
+from services.report_service import ReportSection, ReportTable
 
 config = load_config(None)
 
