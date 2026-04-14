@@ -36,7 +36,7 @@ class EmailService:
 
         subject = "NEOSSat-Astronomy-Image-Analysis-Notification"
         body = (
-            f"This notification is to inform you that the following tasks have finished running: {', '.join(labels_en)}.\n\n"
-            f"Cette notification est pour vous informer que les tâches suivantes ont terminé leur exécution : {', '.join(labels_fr)}."
+            f"This notification is to inform you that the following tasks have finished running: {', '.join(labels_en)}. Please check the results in the application.\n\n"
+            f"Cette notification est pour vous informer que les tâches suivantes ont terminé leur exécution : {', '.join(labels_fr)}. Veuillez vérifier les résultats dans l'application."
         )
         self.send_email(to_email, subject, body)
