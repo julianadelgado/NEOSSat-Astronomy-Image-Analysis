@@ -9,6 +9,7 @@ from cli.validator import validate_data_directory, validate_email
 from handlers.data_manager import DataManager
 from handlers.fits_handler import FitsHandler
 from services.email_service import EmailService
+from services.report_service import ReportService
 from tasks.stacking.image_stacking import ImageStacking
 from tasks.stars.star_detection import StarDetection
 from tasks.streaks.dl_streak_detector import DLStreakDetector
@@ -97,12 +98,14 @@ def main(
     run_image_stacking = image_stacking or run_all
     run_streaks = streaks or run_all
 
+    report_service = ReportService(reports_dir=cfg.reports_dir)
+
     for filename in os.listdir(cfg.data_dir):
         if filename.endswith(".fits"):
             file_path = os.path.join(cfg.data_dir, filename)
             data_manager = DataManager(file_path)
             if data_manager.is_fits_correct_mode():
-                # TODO verify order of call operations
+
                 if run_image_stacking:
                     print("Running image stacking...")
 
@@ -120,6 +123,11 @@ def main(
                         downloader.download_images_to_directory(clean_name)
                         preprocessor = ImageStacking(clean_name, data_manager, date_obs)
                         preprocessor.stack_images()
+                        report_service.append(
+                            preprocessor._build_report_section(
+                                preprocessor.stacked_images
+                            )
+                        )
                         print(f"Cleaning up temporary folder: {clean_name} ")
                         shutil.rmtree(clean_name)
                     data_manager.fits_image.close()
@@ -133,8 +141,10 @@ def main(
 
                     image = fits.getdata(fits_path)
                     header = fits.getheader(fits_path)
-                    detector.run(image, header, output_dir)
-
+                    results = detector.run(image, header, output_dir)
+                    report_service.append(
+                        detector._build_report_section(output_dir, results)
+                    )
             else:
                 print(
                     f"Moving {filename} to wrong mode directory: {cfg.wrong_mode_dir}"
@@ -148,6 +158,13 @@ def main(
         print("Running streak detection on directory...")
         detector = DLStreakDetector(data_dir=cfg.data_dir, clean_results=True)
         detector.run()
+        report_service.append(
+            detector._build_report_section(
+                detector.results_summary, detector.result_dir
+            )
+        )
+
+    report_service.flush("NEOSSat Analysis")
 
     completed_tasks = []
     if run_image_stacking:

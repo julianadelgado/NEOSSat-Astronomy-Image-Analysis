@@ -9,9 +9,7 @@ sys.path.append(str(Path(__file__).parent / "dl_streak_detect"))
 from cli.config import load_config
 from processing.processors.fits_to_png import FitsToPng
 from services.report_service import (
-    ReportData,
     ReportSection,
-    ReportService,
     ReportTable,
 )
 from services.satellite_db_service import SatelliteDatabaseService
@@ -255,9 +253,9 @@ class DLStreakDetector:
 
         return enhanced
 
-    def _generate_report(
+    def _build_report_section(
         self, results_summary: List[Dict[str, Any]], result_dir: Path
-    ) -> None:
+    ) -> ReportSection:
         sections = []
         for res in results_summary:
             stem = res["file"]
@@ -334,9 +332,10 @@ class DLStreakDetector:
         if not sections:
             sections.append(ReportSection(title="Summary", content="No streaks found"))
 
-        report_service = ReportService(REPORTS_DIR)
-        report_service.generate(
-            ReportData(task_name="Streak Detection", sections=sections)
+        return ReportSection(
+            title="Streak Detection Results",
+            content="Summary of streak detection results.",
+            subsections=sections,
         )
 
     def run(self) -> Dict[str, Any]:
@@ -489,7 +488,8 @@ class DLStreakDetector:
             if INFERENCE_DATA_DIR.exists():
                 shutil.rmtree(INFERENCE_DATA_DIR, ignore_errors=True)
 
-        self._generate_report(results_summary, Path(opt.project) / opt.name)
+        self.results_summary = results_summary
+        self.result_dir = Path(opt.project) / opt.name
 
         return {"streaks": results_summary}
 

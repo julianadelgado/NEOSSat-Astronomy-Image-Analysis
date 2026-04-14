@@ -11,7 +11,7 @@ from photutils.detection import DAOStarFinder
 
 from cli.config import load_config
 from processing.core.processor import IProcessor
-from services.report_service import ReportData, ReportSection, ReportService
+from services.report_service import ReportSection
 from tasks.stars.heatmap import generate_heatmap
 from tasks.stars.map_groups import map_to_group
 from tasks.stars.queries import query_simbad_skycoord
@@ -90,7 +90,9 @@ class StarDetection(IProcessor):
             image, wcs, detected_candidates, matched_candidates, output_dir
         )
 
-        self._generate_report(output_dir, {"stars_detected": len(matched_candidates)})
+        self._build_report_section(
+            output_dir, {"stars_detected": len(matched_candidates)}
+        )
 
         return {"stars_detected": len(matched_candidates)}
 
@@ -435,8 +437,7 @@ class StarDetection(IProcessor):
 
         print(f"Region catalog map saved to {map_path}")
 
-    def _generate_report(self, output_dir: Path, results: dict):
-        report_service = ReportService(reports_dir=REPORTS_DIR)
+    def _build_report_section(self, output_dir: Path, results: dict) -> ReportSection:
         star_images = [
             p
             for p in [
@@ -447,15 +448,9 @@ class StarDetection(IProcessor):
             ]
             if p.exists()
         ]
-        report_service.generate(
-            ReportData(
-                task_name="Star Detection",
-                sections=[
-                    ReportSection(
-                        title=f"Results for {output_dir.name}",
-                        content=f"Stars detected: {results.get('stars_detected', 0)}",
-                        images=star_images,
-                    )
-                ],
-            )
+
+        return ReportSection(
+            title=f"Results for {output_dir.name}",
+            content=f"Stars detected: {results.get('stars_detected', 0)}",
+            images=star_images,
         )
