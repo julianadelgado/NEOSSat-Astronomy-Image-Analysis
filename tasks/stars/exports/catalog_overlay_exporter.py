@@ -1,16 +1,10 @@
 from pathlib import Path
 
 import matplotlib
-import matplotlib.patheffects as path_effects
 import numpy as np
 from matplotlib import pyplot as plt
 
-from tasks.stars.constants import (
-    FIGSIZE,
-    REPORTS_STARS_IMAGE_PATH,
-    VMAX_PERCENTILE,
-    VMIN_PERCENTILE,
-)
+from tasks.stars.constants import FIGSIZE, VMAX_PERCENTILE, VMIN_PERCENTILE
 
 matplotlib.use("Agg")
 

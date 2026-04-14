@@ -1,18 +1,16 @@
 from pathlib import Path
-import numpy as np
+
 from matplotlib import pyplot as plt
 
-from tasks.stars.constants import (
-    FILTERS,
-    REPORTS_MAGNITUDE_PLOT_PATH,
-)
+from tasks.stars.constants import FILTERS, REPORTS_MAGNITUDE_PLOT_PATH
 from tasks.stars.detected_star import DetectedStar
 
 
 def render_magnitude_plot(matched_candidates: list[DetectedStar], output_dir: Path):
 
     matched_objects = [
-        c for c in matched_candidates
+        c
+        for c in matched_candidates
         if c.is_matched() and c.object_id is not None and c.magnitude_obs is not None
     ]
 
@@ -26,8 +24,7 @@ def render_magnitude_plot(matched_candidates: list[DetectedStar], output_dir: Pa
     mag_obs = [c.magnitude_obs for c in matched_objects]
 
     sim_mags = {
-        f: [getattr(c, f"mag_{f.lower()}") for c in matched_objects]
-        for f in FILTERS
+        f: [getattr(c, f"mag_{f.lower()}") for c in matched_objects] for f in FILTERS
     }
 
     fig, ax = plt.subplots(figsize=(8, max(6, len(object_ids) * 0.4)))

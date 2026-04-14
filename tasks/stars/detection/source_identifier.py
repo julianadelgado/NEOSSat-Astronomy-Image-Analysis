@@ -2,16 +2,10 @@ from typing import List
 
 import numpy as np
 from astropy.stats import sigma_clipped_stats
-
-from tasks.stars.constants import (
-    SATURATION_PERCENTILE,
-    SIGMA,
-)
-from tasks.stars.detected_star import DetectedStar
-
-from scipy.ndimage import label, center_of_mass
+from scipy.ndimage import center_of_mass, label
 
 from tasks.stars.constants import SATURATION_PERCENTILE, SIGMA
+from tasks.stars.detected_star import DetectedStar
 
 MAX_MATCH_RADIUS_ARCSEC = 3.0
 

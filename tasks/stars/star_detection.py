@@ -7,8 +7,13 @@ from astropy.wcs import WCS
 from processing.core.processor import IProcessor
 from services.simbad.simbad_service import query_simbad_skycoord
 from tasks.stars.constants import FLUX_THRESHOLD
+from tasks.stars.detection.astrometric_alignment import (
+    align_detected_to_catalog_with_image,
+)
 from tasks.stars.detection.region_identifier import get_image_region
 from tasks.stars.detection.source_identifier import detect_sources
+from tasks.stars.detection.source_matching import match_candidates
+from tasks.stars.exports.catalog_overlay_exporter import render_catalog_overlay
 from tasks.stars.exports.csv_exporter import export_results
 from tasks.stars.exports.heatmap_exporter import render_heatmaps
 from tasks.stars.exports.image_exporter import render_region_image
@@ -18,9 +23,6 @@ from tasks.stars.exports.map_exporter import (
     render_region_map,
 )
 from tasks.stars.exports.report_generation import generate_report
-from tasks.stars.detection.source_matching import match_candidates
-from tasks.stars.exports.catalog_overlay_exporter import render_catalog_overlay
-from tasks.stars.detection.astrometric_alignment import align_detected_to_catalog_with_image
 
 matplotlib.use("Agg")
 
@@ -52,9 +54,7 @@ class StarDetection(IProcessor):
         output_dir.mkdir(parents=True, exist_ok=True)
         csv_path = output_dir / "simbad_request_results.csv"
 
-        region_catalog = query_simbad_skycoord(
-            center, radius, output_csv_path=csv_path
-        )
+        region_catalog = query_simbad_skycoord(center, radius, output_csv_path=csv_path)
 
         # ----------------------------------------------------------
         # 3. SIMBAD catalog map rendering
@@ -74,8 +74,7 @@ class StarDetection(IProcessor):
         initial_count = len(detected_candidates)
 
         detected_candidates = [
-            src for src in detected_candidates
-            if src.flux >= FLUX_THRESHOLD
+            src for src in detected_candidates if src.flux >= FLUX_THRESHOLD
         ]
 
         filtered_count = initial_count - len(detected_candidates)
@@ -83,12 +82,12 @@ class StarDetection(IProcessor):
 
         if len(detected_candidates) == 0:
             return {"stars_detected": 0}
-        
+
         # -------------------------------------------------------------------
         # 4.5 Astrometric alignment of detected candidates to SIMBAD catalog
         # -------------------------------------------------------------------
 
-        if True :
+        if True:
             detected_candidates, image = align_detected_to_catalog_with_image(
                 detected_candidates,
                 region_catalog,

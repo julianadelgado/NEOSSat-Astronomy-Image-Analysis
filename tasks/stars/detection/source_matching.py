@@ -1,8 +1,7 @@
 from typing import List, Set, Tuple
 
-from tasks.stars.detected_star import DetectedStar
 from tasks.stars.catalog.identified_object import IdentifiedObjectSkyCoord
-
+from tasks.stars.detected_star import DetectedStar
 
 MAX_MATCH_RADIUS_ARCSEC = 30.0
 

@@ -1,13 +1,12 @@
-from typing import List, Tuple
+from typing import List, Tuple, cast
 
 import numpy as np
-from astropy.wcs import WCS
-
-from tasks.stars.detected_star import DetectedStar
-from tasks.stars.catalog.identified_object import IdentifiedObjectSkyCoord
-from typing import cast
 from astropy.coordinates import SkyCoord
+from astropy.wcs import WCS
 from scipy.ndimage import shift as nd_shift
+
+from tasks.stars.catalog.identified_object import IdentifiedObjectSkyCoord
+from tasks.stars.detected_star import DetectedStar
 
 MAX_SEARCH_RADIUS_PX = 50
 MIN_MATCHES_REQUIRED = 5
