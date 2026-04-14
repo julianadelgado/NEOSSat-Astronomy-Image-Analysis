@@ -23,7 +23,7 @@ from tasks.stars.exports.map_exporter import (
     render_region_catalog_map,
     render_region_map,
 )
-from tasks.stars.exports.report_generation import generate_report, generate_debug_report
+from tasks.stars.exports.report_generation import generate_debug_report, generate_report
 
 matplotlib.use("Agg")
 

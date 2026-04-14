@@ -1,12 +1,10 @@
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 from tasks.stars.constants import REPORTS_STARS_IMAGE_PATH, REPORTS_STARS_MAP_PATH
 from tasks.stars.exports.report_generation import generate_report
 
 
-@patch("tasks.stars.exports.report_generation.ReportService")
-def test_generate_report_basic(mock_service, tmp_path: Path):
+def test_generate_report_basic(tmp_path: Path):
     output_dir = tmp_path
 
     img1 = output_dir / REPORTS_STARS_IMAGE_PATH
@@ -16,33 +14,25 @@ def test_generate_report_basic(mock_service, tmp_path: Path):
     img1.touch()
     img2.touch()
 
-    instance = MagicMock()
-    mock_service.return_value = instance
+    section = generate_report(output_dir, {"stars_detected": 3})
 
-    generate_report(output_dir, {"stars_detected": 3})
+    assert section.title == f"Results for {output_dir.name}"
+    assert "Stars detected: 3" in section.content
+    assert len(section.images) == 2
 
-    assert instance.generate.called
 
-
-@patch("tasks.stars.exports.report_generation.ReportService")
-def test_generate_report_no_images(mock_service, tmp_path: Path):
+def test_generate_report_no_images(tmp_path: Path):
     output_dir = tmp_path
 
-    instance = MagicMock()
-    mock_service.return_value = instance
+    section = generate_report(output_dir, {"stars_detected": 0})
 
-    generate_report(output_dir, {"stars_detected": 0})
-
-    assert instance.generate.called
+    assert section.content == "Stars detected: 0"
+    assert section.images == []
 
 
-@patch("tasks.stars.exports.report_generation.ReportService")
-def test_generate_report_missing_results_key(mock_service, tmp_path: Path):
+def test_generate_report_missing_results_key(tmp_path: Path):
     output_dir = tmp_path
 
-    instance = MagicMock()
-    mock_service.return_value = instance
+    section = generate_report(output_dir, {})
 
-    generate_report(output_dir, {})
-
-    assert instance.generate.called
+    assert "Stars detected: 0" in section.content
