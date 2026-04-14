@@ -162,10 +162,8 @@ def find_and_remove_duplicates(
 
         if is_duplicate:
             duplicates_found += 1
-            print(
-                f"Duplicate found: {file_path.name} \
-                is similar to {original_file.name} (Distance: {min_dist})"
-            )
+            print(f"Duplicate found: {file_path.name} \
+                is similar to {original_file.name} (Distance: {min_dist})")
 
             # Handle duplicate
             if action == "delete":
