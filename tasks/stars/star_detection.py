@@ -27,7 +27,7 @@ from tasks.stars.exports.report_generation import generate_debug_report, generat
 
 matplotlib.use("Agg")
 
-DEBUG = True
+DEBUG = False
 
 
 class StarDetection(IProcessor):
