@@ -5,6 +5,7 @@ import numpy as np
 
 from tasks.stars.constants import REPORTS_STARS_HEATMAP_PATH
 from tasks.stars.detected_star import DetectedStar
+from matplotlib.colors import LogNorm
 
 
 def render_heatmaps(image, matched_candidates: list[DetectedStar], output_dir: Path):
@@ -45,24 +46,24 @@ def generate_heatmap(
 ):
 
     heatmap, _, _ = np.histogram2d(x_coords, y_coords, bins=bins, weights=values)
+
     counts, _, _ = np.histogram2d(x_coords, y_coords, bins=bins)
 
     with np.errstate(divide="ignore", invalid="ignore"):
         heatmap = heatmap / counts
-        heatmap[np.isnan(heatmap)] = 0.0
-
-    heatmap_log = np.log1p(heatmap)
+        heatmap[np.isnan(heatmap)] = 0
 
     plt.figure(figsize=(10, 8))
 
     plt.imshow(
-        heatmap_log.T,
+        heatmap.T,
         origin="lower",
         cmap="inferno",
         interpolation="nearest",
+        norm=LogNorm(),
     )
 
-    plt.colorbar(label="log(1 + value)")
+    plt.colorbar(label="value")
     plt.title(title)
     plt.xlabel("X bins")
     plt.ylabel("Y bins")
