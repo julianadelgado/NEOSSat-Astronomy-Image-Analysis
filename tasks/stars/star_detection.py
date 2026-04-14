@@ -1,52 +1,33 @@
-import csv
 from pathlib import Path
 
-import astropy.units as units
 import matplotlib
 import numpy as np
-from astropy.coordinates import SkyCoord
-from astropy.stats import sigma_clipped_stats
 from astropy.wcs import WCS
-from photutils.detection import DAOStarFinder
 
-from cli.config import load_config
 from processing.core.processor import IProcessor
 from services.report_service import ReportSection
-from tasks.stars.heatmap import generate_heatmap
-from tasks.stars.map_groups import map_to_group
-from tasks.stars.queries import query_simbad_skycoord
+from services.simbad.simbad_service import query_simbad_skycoord
+from tasks.stars.constants import FLUX_THRESHOLD
+from tasks.stars.detection.astrometric_alignment import (
+    align_detected_to_catalog_with_image,
+)
+from tasks.stars.detection.region_identifier import get_image_region
+from tasks.stars.detection.source_identifier import detect_sources
+from tasks.stars.detection.source_matching import match_candidates
+from tasks.stars.exports.catalog_overlay_exporter import render_catalog_overlay
+from tasks.stars.exports.csv_exporter import export_results
+from tasks.stars.exports.heatmap_exporter import render_heatmaps
+from tasks.stars.exports.image_exporter import render_region_image
+from tasks.stars.exports.magnitude_data_exporter import render_magnitude_plot
+from tasks.stars.exports.map_exporter import (
+    render_region_catalog_map,
+    render_region_map,
+)
+from tasks.stars.exports.report_generation import generate_debug_report, generate_report
 
 matplotlib.use("Agg")
 
-from matplotlib import pyplot as plt  # noqa: E402
-
-SIGMA = 3.0
-DAO_FINDER_FWHM = 3.0
-DAO_FINDER_THRESHOLD = 5.0
-MATCH_THRESHOLD = 30.0 * units.arcsec
-
-CANDIDATE_NOT_FOUND_STRING = "not_found"
-
-FIGSIZE = (10, 10)
-VMIN_PERCENTILE = 5
-VMAX_PERCENTILE = 99
-
-TYPE_SYMBOLS = {
-    "star": {"marker": "+", "color": "red"},
-    "planet": {"marker": "*", "color": "green"},
-    "star cluster": {"marker": "D", "color": "magenta"},
-    "galaxies": {"marker": "o", "color": "blue"},
-    "galaxies set": {"marker": "s", "color": "orange"},
-    "spectral source": {"marker": "^", "color": "cyan"},
-    "nebula": {"marker": "v", "color": "yellow"},
-    "cloud": {"marker": "p", "color": "brown"},
-    "Default": {"marker": "x", "color": "purple"},
-}
-
-config = load_config(None)
-
-OUTPUT_DIR = Path(config.results_dir)
-REPORTS_DIR = Path(config.reports_dir)
+DEBUG = False
 
 
 class StarDetection(IProcessor):
@@ -56,401 +37,108 @@ class StarDetection(IProcessor):
 
     def run(self, image: np.ndarray, header, output_dir: Path, **kwargs) -> dict:
 
+        # Added comments to clarify each step of the process
+        # AB - 14/04/2026
+
+        # 1 - Image TRIM (disabled)
+        # TRIM_X = 15
+        # image = image[:, :-TRIM_X]
+
         wcs = WCS(header)
 
-        center, radius = self._get_image_region(image, wcs)
+        # Image TRIM (disabled)
+        # wcs.wcs.crpix[0] -= TRIM_X
+
+        # ----------------------------------------------------------
+        # 2. Sky region identification & SIMBAD query
+        # ----------------------------------------------------------
+        center, radius = get_image_region(image, wcs)
 
         output_dir.mkdir(parents=True, exist_ok=True)
         csv_path = output_dir / "simbad_request_results.csv"
 
         region_catalog = query_simbad_skycoord(center, radius, output_csv_path=csv_path)
 
-        self._render_region_catalog_map(
-            image=image, wcs=wcs, region_catalog=region_catalog, output_dir=output_dir
+        # ----------------------------------------------------------
+        # 3. SIMBAD catalog map rendering
+        # ----------------------------------------------------------
+        render_region_catalog_map(
+            image=image,
+            wcs=wcs,
+            region_catalog=region_catalog,
+            output_dir=output_dir,
         )
 
-        detected_candidates = self._detect_sources(image, wcs)
+        # ----------------------------------------------------------
+        # 4. Source detection
+        # ----------------------------------------------------------
+        detected_candidates = detect_sources(image, wcs, header)
+
+        initial_count = len(detected_candidates)
+
+        detected_candidates = [
+            src for src in detected_candidates if src.flux >= FLUX_THRESHOLD
+        ]
+
+        filtered_count = initial_count - len(detected_candidates)
+        print(f"Filtered {filtered_count} faint candidates based on flux")
 
         if len(detected_candidates) == 0:
             return {"stars_detected": 0}
 
-        matched_candidates = self._match_candidates(detected_candidates, region_catalog)
+        # -------------------------------------------------------------------
+        # 4.5 Astrometric alignment of detected candidates to SIMBAD catalog
+        # -------------------------------------------------------------------
 
-        self._export_results(matched_candidates, output_dir)
+        if DEBUG:
+            detected_candidates, image = align_detected_to_catalog_with_image(
+                detected_candidates,
+                region_catalog,
+                wcs,
+                image,
+            )
 
-        self._render_region_image(
-            image, wcs, detected_candidates, matched_candidates, output_dir
+        # ----------------------------------------------------------
+        # 5. Matching
+        # ----------------------------------------------------------
+        matched_candidates = match_candidates(detected_candidates, region_catalog)
+
+        # ----------------------------------------------------------
+        # 6. Debug overlay - should be removed in production -
+        # ----------------------------------------------------------
+        render_catalog_overlay(
+            image=image,
+            wcs=wcs,
+            detected_candidates=detected_candidates,
+            region_catalog=region_catalog,
+            output_dir=output_dir,
         )
 
-        self._render_region_map(
-            image, wcs, detected_candidates, matched_candidates, output_dir
-        )
+        # ----------------------------------------------------------
+        # 7. Exports
+        # ----------------------------------------------------------
+        export_results(matched_candidates, output_dir)
 
-        self._render_heatmaps(
-            image, wcs, detected_candidates, matched_candidates, output_dir
-        )
+        render_region_image(image, wcs, matched_candidates, output_dir)
+        render_region_map(image, matched_candidates, output_dir)
+        render_heatmaps(image, matched_candidates, output_dir)
+        render_magnitude_plot(matched_candidates, output_dir)
 
-        self._build_report_section(
-            output_dir, {"stars_detected": len(matched_candidates)}
-        )
+        if not DEBUG:
+            self._build_report_section(
+                output_dir,
+                {"stars_detected": len(matched_candidates)},
+            )
+        else:
+            generate_debug_report(
+                output_dir,
+                {"stars_detected": len(matched_candidates)},
+            )
 
         return {"stars_detected": len(matched_candidates)}
 
-    """===> Private Functions <==="""
-
-    def _get_image_region(self, image: np.ndarray, wcs: WCS):
-        """Calculate the center and radius of the image region"""
-
-        height, width = image.shape
-        x_corners = [0, width, 0, width]
-        y_corners = [0, 0, height, height]
-
-        corner_coords = wcs.pixel_to_world(x_corners, y_corners)
-
-        center = SkyCoord(ra=np.mean(corner_coords.ra), dec=np.mean(corner_coords.dec))
-
-        center_coord_str = f"RA={center.ra.deg:.4f} deg, Dec={center.dec.deg:.4f} deg"
-
-        print(f"Image region center: {center_coord_str}")
-
-        separations = center.separation(corner_coords)
-        radius = separations.max()
-
-        print(f"Image region radius: {radius.arcmin:.2f} arcmin")
-
-        return center, radius
-
-    def _detect_sources(self, image: np.ndarray, wcs: WCS):
-        """Run source detection on the image using DAOStarFinder"""
-
-        print("Running source detection...")
-
-        mean, median, std = sigma_clipped_stats(image, sigma=SIGMA)
-
-        daofind = DAOStarFinder(
-            fwhm=DAO_FINDER_FWHM, threshold=DAO_FINDER_THRESHOLD * std
-        )
-
-        sources = daofind(image - median)
-
-        if sources is None or len(sources) == 0:
-            print("Found 0 potential star candidates.")
-            return []
-
-        print(f"Found {len(sources)} potential star candidates.")
-
-        x_coord = sources["xcentroid"]
-        y_coord = sources["ycentroid"]
-        flux = sources["flux"]
-
-        world_coords = wcs.pixel_to_world(x_coord, y_coord)
-
-        detected_candidates = []
-
-        for i in range(len(sources)):
-
-            detected_candidates.append(
-                {
-                    "x": float(x_coord[i]),
-                    "y": float(y_coord[i]),
-                    "coord": world_coords[i],
-                    "flux": float(flux[i]),
-                }
-            )
-
-        print(
-            f"Detected {len(detected_candidates)} star candidates after DAOStarFinder."
-        )
-
-        return detected_candidates
-
-    def _match_candidates(self, detected_candidates, region_catalog):
-        """Match detected candidates with SIMBAD catalog objects"""
-
-        print("Matching detected candidates with catalog objects...")
-
-        if len(detected_candidates) == 0:
-            return []
-
-        if len(region_catalog) == 0:
-            matched = []
-            for src in detected_candidates:
-                matched.append(
-                    {
-                        **src,
-                        "object_id": CANDIDATE_NOT_FOUND_STRING,
-                        "otype": "Default",
-                        "deviation_arcsec": None,
-                    }
-                )
-            return matched
-
-        detected_coords = SkyCoord([src["coord"] for src in detected_candidates])
-        catalog_coords = SkyCoord([obj.coord for obj in region_catalog])
-
-        idx, sep2d, _ = detected_coords.match_to_catalog_sky(catalog_coords)
-
-        matched_candidates = []
-
-        for i, src in enumerate(detected_candidates):
-            separation = sep2d[i]
-            if separation < MATCH_THRESHOLD:
-                matched_candidates.append(
-                    {
-                        **src,
-                        "object_id": region_catalog[idx[i]].object_id,
-                        "otype": getattr(region_catalog[idx[i]], "otype", "Default"),
-                        "deviation_arcsec": separation.arcsec,
-                    }
-                )
-            else:
-                matched_candidates.append(
-                    {
-                        **src,
-                        "object_id": CANDIDATE_NOT_FOUND_STRING,
-                        "otype": "Default",
-                        "deviation_arcsec": separation.arcsec,
-                    }
-                )
-
-        identified_candidates = [
-            c
-            for c in matched_candidates
-            if c["object_id"] != CANDIDATE_NOT_FOUND_STRING
-        ]
-
-        matched_count = len(identified_candidates)
-
-        print(f"Matched {matched_count} candidates with catalog objects.")
-
-        return matched_candidates
-
-    def _export_results(self, matched_candidates, output_dir: Path):
-        """Export matched candidates to a CSV file"""
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-        csv_path = output_dir / "star_detection_results.csv"
-
-        with open(csv_path, mode="w", newline="") as file:
-
-            writer = csv.writer(file)
-
-            writer.writerow(
-                [
-                    "id",
-                    "x_pixel",
-                    "y_pixel",
-                    "ra_deg",
-                    "dec_deg",
-                    "flux",
-                    "object_id",
-                    "deviation_arcsec",
-                ]
-            )
-
-            for i, candidate in enumerate(matched_candidates):
-
-                ra_deg = candidate["coord"].ra.deg
-                dec_deg = candidate["coord"].dec.deg
-                deviation = candidate.get("deviation_arcsec")
-                object_id = candidate.get("object_id", CANDIDATE_NOT_FOUND_STRING)
-
-                writer.writerow(
-                    [
-                        i,
-                        candidate["x"],
-                        candidate["y"],
-                        ra_deg,
-                        dec_deg,
-                        candidate["flux"],
-                        object_id,
-                        (
-                            deviation
-                            if deviation is not None
-                            else CANDIDATE_NOT_FOUND_STRING
-                        ),
-                    ]
-                )
-
-        print(f"Star detection results exported to {csv_path}")
-
-    def _render_region_image(
-        self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
-    ):
-        """Generate an image of the region with detected stars highlighted"""
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / "detected_stars_img.png"
-
-        fig = plt.figure(figsize=FIGSIZE)
-        ax = plt.subplot(projection=wcs)
-
-        ax.imshow(
-            image,
-            origin="lower",
-            cmap="gray",
-            vmin=np.percentile(image, VMIN_PERCENTILE),
-            vmax=np.percentile(image, VMAX_PERCENTILE),
-        )
-
-        for star in matched_candidates:
-            x_star = star["x"]
-            y_star = star["y"]
-            object_id = star.get("object_id", CANDIDATE_NOT_FOUND_STRING)
-
-            if object_id != CANDIDATE_NOT_FOUND_STRING:
-                ax.plot(
-                    x_star,
-                    y_star,
-                    marker="o",
-                    markersize=8,
-                    markeredgecolor="cyan",
-                    markerfacecolor="none",
-                    label=object_id,
-                    linewidth=1.5,
-                )
-            else:
-                ax.plot(
-                    x_star,
-                    y_star,
-                    marker="o",
-                    markersize=8,
-                    markeredgecolor="red",
-                    markerfacecolor="none",
-                    linewidth=1.5,
-                )
-
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
-        plt.close(fig)
-
-        print(f"Region image with detected stars saved to {output_path}")
-
-    def _render_region_map(
-        self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
-    ):
-        """Generate an image of the region with stars highlighted with otypes"""
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-        map_path = output_dir / "detected_stars_map.png"
-
-        fig, ax = plt.subplots(figsize=FIGSIZE)
-        fig.patch.set_facecolor("black")
-        ax.set_facecolor("black")
-        ax.axis("off")
-        ax.set_xlim(0, image.shape[1])
-        ax.set_ylim(0, image.shape[0])
-
-        for candidate in matched_candidates:
-            x_star = candidate["x"]
-            y_star = candidate["y"]
-
-            object_id = candidate.get("object_id", CANDIDATE_NOT_FOUND_STRING)
-
-            if object_id != CANDIDATE_NOT_FOUND_STRING:
-                ax.plot(x_star, y_star, marker=".", color="white", markersize=6)
-
-            otype = candidate.get("otype", "Default")
-
-            group = map_to_group(otype)
-            symbol_info = TYPE_SYMBOLS.get(group, TYPE_SYMBOLS["Default"])
-
-            ax.plot(
-                x_star,
-                y_star,
-                marker=symbol_info["marker"],
-                color=symbol_info["color"],
-                markersize=8,
-                label=object_id if object_id != CANDIDATE_NOT_FOUND_STRING else None,
-                fillstyle="none",
-                linewidth=1.5,
-            )
-
-        plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)
-        plt.close(fig)
-
-        print(f"Region map with detected stars saved to {map_path}")
-
-    def _render_heatmaps(
-        self, image, wcs, detected_candidates, matched_candidates, output_dir: Path
-    ):
-        """Generate heatmaps for detected candidates."""
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-
-        if len(matched_candidates) == 0:
-            print("No candidates to generate heatmaps.")
-            return
-
-        x_coords = [src["x"] for src in matched_candidates]
-        y_coords = [src["y"] for src in matched_candidates]
-        flux_values = [src["flux"] for src in matched_candidates]
-
-        heatmap_path = output_dir / "candidates_heatmap.png"
-        generate_heatmap(
-            x_coords,
-            y_coords,
-            flux_values,
-            image.shape,
-            heatmap_path,
-            bins=50,
-            title="Detected Stars Heatmap",
-        )
-
-        print(f"Heatmap of detected stars saved to {heatmap_path}")
-
-    def _render_region_catalog_map(self, image, wcs, region_catalog, output_dir: Path):
-        """Generate a map showing all objects in the SIMBAD region catalog."""
-
-        if len(region_catalog) == 0:
-            print("Region catalog is empty, nothing to render.")
-            return
-
-        output_dir.mkdir(parents=True, exist_ok=True)
-        map_path = output_dir / "region_catalog_map.png"
-
-        fig, ax = plt.subplots(figsize=FIGSIZE)
-        fig.patch.set_facecolor("black")
-        ax.set_facecolor("black")
-        ax.axis("off")
-        ax.set_xlim(0, image.shape[1])
-        ax.set_ylim(0, image.shape[0])
-
-        for obj in region_catalog:
-            x_pix, y_pix = wcs.world_to_pixel(obj.coord)
-            otype = getattr(obj, "otype", "Default")
-            group = map_to_group(otype)
-            symbol_info = TYPE_SYMBOLS.get(group, TYPE_SYMBOLS["Default"])
-
-            ax.plot(
-                x_pix,
-                y_pix,
-                marker=symbol_info["marker"],
-                color=symbol_info["color"],
-                markersize=8,
-                label=obj.object_id,
-                fillstyle="none",
-                linewidth=1.5,
-            )
-
-        plt.savefig(map_path, dpi=300, bbox_inches="tight", pad_inches=0)
-        plt.close(fig)
-
-        print(f"Region catalog map saved to {map_path}")
-
     def _build_report_section(self, output_dir: Path, results: dict) -> ReportSection:
-        star_images = [
-            p
-            for p in [
-                output_dir / "detected_stars_img.png",
-                output_dir / "detected_stars_map.png",
-                output_dir / "region_catalog_map.png",
-                output_dir / "candidates_heatmap.png",
-            ]
-            if p.exists()
-        ]
-
-        return ReportSection(
-            title=f"Results for {output_dir.name}",
-            content=f"Stars detected: {results.get('stars_detected', 0)}",
-            images=star_images,
+        return generate_report(
+            output_dir,
+            results,
         )

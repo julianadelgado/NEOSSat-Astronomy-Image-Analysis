@@ -53,7 +53,8 @@ cli = [
     "seaborn",
     "tqdm>=4.41.0",
     "requests>=2.23.0",
-    "protobuf<4.21.3"
+    "protobuf<4.21.3",
+    "scikit-learn"
 ]
 api = [
     "matplotlib<3.8",
@@ -72,7 +73,8 @@ api = [
     "tqdm>=4.41.0",
     "requests>=2.23.0",
     "protobuf<4.21.3",
-    "astroquery>=0.4.11"
+    "astroquery>=0.4.11",
+    "scikit-learn"
 ]
 dev = [ "black", "isort", "flake8", "pytest", "httpx>=0.23.0,<0.28.0" ]
 

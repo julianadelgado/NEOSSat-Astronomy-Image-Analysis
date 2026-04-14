@@ -4,11 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from .general import (
-    bbox_iou,
-    box_iou,
-    xywh2xyxy,
-)
+from .general import bbox_iou, box_iou, xywh2xyxy
 from .torch_utils import is_parallel
 
 

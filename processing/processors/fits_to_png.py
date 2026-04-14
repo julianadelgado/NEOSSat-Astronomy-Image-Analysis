@@ -16,7 +16,7 @@ class FitsToPng(IProcessor):
         image: np.ndarray,
         header,
         output_dir: Path,
-        filename: str = "image_normalisee.png",
+        filename: str = "source_image.png",
         **kwargs,
     ) -> dict:
         """
@@ -36,6 +36,9 @@ class FitsToPng(IProcessor):
         _matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
-        plt.imsave(str(png_path), img_data, cmap="gray")
+        plt.imshow(img_data, cmap="gray", origin="lower")
+        plt.axis("off")
+        plt.savefig(png_path, dpi=300, bbox_inches="tight", pad_inches=0)
+        plt.close()
 
         return {"png_saved": str(png_path)}
