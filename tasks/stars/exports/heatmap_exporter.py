@@ -45,23 +45,24 @@ def generate_heatmap(
 ):
 
     heatmap, _, _ = np.histogram2d(x_coords, y_coords, bins=bins, weights=values)
-
     counts, _, _ = np.histogram2d(x_coords, y_coords, bins=bins)
 
     with np.errstate(divide="ignore", invalid="ignore"):
         heatmap = heatmap / counts
-        heatmap[np.isnan(heatmap)] = 0
+        heatmap[np.isnan(heatmap)] = 0.0
+
+    heatmap_log = np.log1p(heatmap)
 
     plt.figure(figsize=(10, 8))
 
     plt.imshow(
-        heatmap.T,
+        heatmap_log.T,
         origin="lower",
         cmap="inferno",
         interpolation="nearest",
     )
 
-    plt.colorbar(label="value")
+    plt.colorbar(label="log(1 + value)")
     plt.title(title)
     plt.xlabel("X bins")
     plt.ylabel("Y bins")
