@@ -5,6 +5,7 @@ import numpy as np
 from astropy.wcs import WCS
 
 from processing.core.processor import IProcessor
+from services.report_service import ReportSection
 from services.simbad.simbad_service import query_simbad_skycoord
 from tasks.stars.constants import FLUX_THRESHOLD
 from tasks.stars.detection.astrometric_alignment import (
@@ -22,9 +23,11 @@ from tasks.stars.exports.map_exporter import (
     render_region_catalog_map,
     render_region_map,
 )
-from tasks.stars.exports.report_generation import generate_report
+from tasks.stars.exports.report_generation import generate_report, generate_debug_report
 
 matplotlib.use("Agg")
+
+DEBUG = True
 
 
 class StarDetection(IProcessor):
@@ -87,7 +90,7 @@ class StarDetection(IProcessor):
         # 4.5 Astrometric alignment of detected candidates to SIMBAD catalog
         # -------------------------------------------------------------------
 
-        if True:
+        if DEBUG:
             detected_candidates, image = align_detected_to_catalog_with_image(
                 detected_candidates,
                 region_catalog,
@@ -121,9 +124,21 @@ class StarDetection(IProcessor):
         render_heatmaps(image, matched_candidates, output_dir)
         render_magnitude_plot(matched_candidates, output_dir)
 
-        generate_report(
-            output_dir,
-            {"stars_detected": len(matched_candidates)},
-        )
+        if not DEBUG:
+            self._build_report_section(
+                output_dir,
+                {"stars_detected": len(matched_candidates)},
+            )
+        else:
+            generate_debug_report(
+                output_dir,
+                {"stars_detected": len(matched_candidates)},
+            )
 
         return {"stars_detected": len(matched_candidates)}
+
+    def _build_report_section(self, output_dir: Path, results: dict) -> ReportSection:
+        return generate_report(
+            output_dir,
+            results,
+        )

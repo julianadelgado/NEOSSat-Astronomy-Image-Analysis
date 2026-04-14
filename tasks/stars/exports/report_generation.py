@@ -11,7 +11,28 @@ from tasks.stars.constants import (
 )
 
 
-def generate_report(output_dir: Path, results: dict):
+def generate_report(output_dir: Path, results: dict) -> ReportSection:
+
+    star_images = [
+        p
+        for p in [
+            output_dir / REPORTS_STARS_IMAGE_PATH,
+            output_dir / REPORTS_STARS_MAP_PATH,
+            output_dir / REPORTS_REGION_MAP_PATH,
+            output_dir / REPORTS_STARS_HEATMAP_PATH,
+            output_dir / REPORTS_MAGNITUDE_PLOT_PATH,
+        ]
+        if p.exists()
+    ]
+
+    return ReportSection(
+        title=f"Results for {output_dir.name}",
+        content=f"Stars detected: {results.get('stars_detected', 0)}",
+        images=star_images,
+    )
+
+
+def generate_debug_report(output_dir: Path, results: dict):
 
     report_service = ReportService(reports_dir=REPORTS_DIR)
 
