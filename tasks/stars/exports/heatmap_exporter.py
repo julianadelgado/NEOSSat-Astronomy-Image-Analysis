@@ -2,10 +2,10 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import LogNorm
 
 from tasks.stars.constants import REPORTS_STARS_HEATMAP_PATH
 from tasks.stars.detected_star import DetectedStar
-from matplotlib.colors import LogNorm
 
 
 def render_heatmaps(image, matched_candidates: list[DetectedStar], output_dir: Path):
