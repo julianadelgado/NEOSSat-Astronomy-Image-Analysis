@@ -1,9 +1,8 @@
 from pathlib import Path
-
-from matplotlib import pyplot as plt  # noqa: E402
+import numpy as np
+from matplotlib import pyplot as plt
 
 from tasks.stars.constants import (
-    CANDIDATE_NOT_FOUND_STRING,
     FILTERS,
     REPORTS_MAGNITUDE_PLOT_PATH,
 )
@@ -13,46 +12,52 @@ from tasks.stars.detected_star import DetectedStar
 def render_magnitude_plot(matched_candidates: list[DetectedStar], output_dir: Path):
 
     matched_objects = [
-        c for c in matched_candidates if c.object_id != CANDIDATE_NOT_FOUND_STRING
+        c for c in matched_candidates
+        if c.is_matched() and c.object_id is not None and c.magnitude_obs is not None
     ]
 
     if not matched_objects:
         print("No matched stars to plot magnitudes.")
         return
 
+    matched_objects.sort(key=lambda c: c.magnitude_obs)
+
     object_ids = [c.object_id for c in matched_objects]
     mag_obs = [c.magnitude_obs for c in matched_objects]
 
     sim_mags = {
-        f: [getattr(c, f"mag_{f.lower()}") for c in matched_objects] for f in FILTERS
+        f: [getattr(c, f"mag_{f.lower()}") for c in matched_objects]
+        for f in FILTERS
     }
 
-    fig, ax = plt.subplots(figsize=(max(12, len(object_ids) * 0.5), 6))
+    fig, ax = plt.subplots(figsize=(8, max(6, len(object_ids) * 0.4)))
     ax.set_facecolor("white")
     ax.grid(True, linestyle="--", alpha=0.5)
 
-    x = range(len(object_ids))
+    y = range(len(object_ids))
 
-    ax.scatter(x, mag_obs, color="black", marker="o", label="Observed")
+    ax.scatter(mag_obs, y, color="black", marker="o", label="Observed")
 
     colors = ["blue", "green", "red", "orange", "purple", "brown"]
-    for f, col in zip(FILTERS, colors):
-        ax.scatter(x, sim_mags[f], color=col, marker="s", label=f"SIMBAD {f}")
 
-    ax.invert_yaxis()
-    ax.set_xticks(x)
-    ax.set_xticklabels(object_ids, rotation=90, fontsize=8)
-    ax.set_xlabel("Object ID")
-    ax.set_ylabel("Magnitude")
-    ax.set_title("Magnitudes")
-    ax.legend(loc="upper right", fontsize=8)
+    for f, col in zip(FILTERS, colors):
+        ax.scatter(sim_mags[f], y, color=col, marker="s", label=f"SIMBAD {f}")
+
+    ax.invert_xaxis()
+
+    ax.set_yticks(list(y))
+    ax.set_yticklabels(object_ids, fontsize=8)
+
+    ax.set_ylabel("Object ID")
+    ax.set_xlabel("Magnitude")
+    ax.set_title("Magnitudes (Observed vs SIMBAD)")
+
+    ax.legend(loc="best", fontsize=8)
 
     valid_mags = [m for m in mag_obs if m is not None]
     if valid_mags:
-        min_mag = min(valid_mags)
-        max_mag = max(valid_mags)
-        ax.axhline(min_mag, color="gray", linestyle="--")
-        ax.axhline(max_mag, color="gray", linestyle=":")
+        ax.axvline(min(valid_mags), color="gray", linestyle="--")
+        ax.axvline(max(valid_mags), color="gray", linestyle=":")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     plot_path = output_dir / REPORTS_MAGNITUDE_PLOT_PATH
