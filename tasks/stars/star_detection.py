@@ -90,13 +90,12 @@ class StarDetection(IProcessor):
         # 4.5 Astrometric alignment of detected candidates to SIMBAD catalog
         # -------------------------------------------------------------------
 
-        if DEBUG:
-            detected_candidates, image = align_detected_to_catalog_with_image(
-                detected_candidates,
-                region_catalog,
-                wcs,
-                image,
-            )
+        detected_candidates, image = align_detected_to_catalog_with_image(
+            detected_candidates,
+            region_catalog,
+            wcs,
+            image,
+        )
 
         # ----------------------------------------------------------
         # 5. Matching
