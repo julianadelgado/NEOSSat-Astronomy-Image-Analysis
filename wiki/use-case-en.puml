@@ -1,0 +1,34 @@
+@startuml use-case-en
+top to bottom direction
+
+actor User
+
+cloud "Astronomical Catalogue SIMBAD" as SIMBAD
+cloud "ASC/CSA API" as SAT
+cloud "SMTP Server" as SMTP
+
+package "NEOSSAT - Astronomical Image Analysis" {
+
+    usecase "UC-01: Analyze an astronomical image" as UC01
+    usecase "UC-02: Detect and identify stars" as UC02
+    usecase "UC-03: Detect and identify streaks" as UC03
+    usecase "UC-04: Stack images" as UC04
+    usecase "UC-05: Generate analysis report" as UC05
+    usecase "UC-06: Notify the user" as UC06
+
+}
+
+User --> UC01
+
+UC01 --> UC02
+UC01 --> UC03
+UC01 --> UC05
+UC01 --> UC06
+
+UC01 --> UC04
+
+SIMBAD --> UC02
+SAT --> UC04
+SMTP --> UC06
+
+@enduml

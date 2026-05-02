@@ -1,0 +1,34 @@
+@startuml use-case-fr
+top to bottom direction
+
+actor Utilisateur
+
+cloud "Catalogue astronomique SIMBAD" as SIMBAD
+cloud "API ASC/CSA" as SAT
+cloud "Serveur SMTP" as SMTP
+
+package "NEOSSAT - Analyse d'images astronomiques" {
+
+    usecase "UC-01 : Analyser une image astronomique" as UC01
+    usecase "UC-02 : Détecter et identifier des étoiles" as UC02
+    usecase "UC-03 : Détecter et identifier les traînées" as UC03
+    usecase "UC-04 : Empiler les images" as UC04
+    usecase "UC-05 : Générer un rapport d'analyse" as UC05
+    usecase "UC-06 : Notifier l'utilisateur" as UC06
+
+}
+
+Utilisateur --> UC01
+
+UC01 --> UC02
+UC01 --> UC03
+UC01 --> UC05
+UC01 --> UC06
+
+UC01 --> UC04
+
+SIMBAD --> UC02
+SAT --> UC04
+SMTP --> UC06
+
+@enduml
