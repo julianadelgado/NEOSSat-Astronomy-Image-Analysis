@@ -1,0 +1,36 @@
+@startuml deployment
+
+actor user as user
+
+node "Generic Server" as server {
+	rectangle "Linux-based OS" as os {
+		rectangle "Python 3.11" {
+			component "application" as app
+		}
+	}
+}
+
+node "Client computer" as client {
+	component "SSH client" as ssh
+	component "Postman" as postman
+}
+
+cloud "CSA/ASC infrastructure" as csa {
+	database "Image database" as db
+}
+
+cloud "External services" as external {
+	database "SIMBAD database" as simbad
+	component "Email server" as email
+}
+
+user ..> ssh
+user ..> postman
+ssh --> os : SSH
+postman --> app : HTTP requests
+
+db --> app : images
+simbad --> app : SIMBAD data
+app --> email : SMTP
+
+@enduml
