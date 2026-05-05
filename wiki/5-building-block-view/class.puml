@@ -43,15 +43,62 @@ package Processors {
 		+name() : str
 		+run(image, header, output_dir: Path) : dict
 	}
+
+	class StreakDetectionProcessor {
+		+name() : str
+		+run(image, header, output_dir: Path) : dict
+	}
+
+	class ImageStackingProcessor {
+		+name() : str
+		+run(image, header, output_dir: Path) : dict
+	}
 }
 
+package Services {
 
+	class ReportService {
+		+append(section: ReportSection)
+		+flush(task_name, filename) : Path
+		+generate(date: ReportData, filename) : Path
+		-render_section(section: ReportSection, level) : List[str]
+		+create_pdf(pdf_path: Path, lines: List[str]): Path
+	}
+
+	class SimbadClient <<Module>> {
+		+query_region(center: Skycord, radius): IdentifiedObjectSkyCoord[]
+		+query_region_with_otype(center: SkyCoord, radius): IdentifiedObjectSkyCoord[]
+		+query_region_with_filters(center: SkyCoord, radius, filters): IdentifiedObjectSkyCoord[]
+	}
+
+	class SatelliteDatabaseService {
+		-load_satellites()
+		+query_satellites_at_position(ra_deg,dec_deg,observation_time,search_radius_arcmin): List[Dict[str, Any]]
+		+correlate_streak_with_satellite(streak_ra,streak_dec,observation_time,search_radius_arcmin): Optional[List[Dict[str, Any]]]
+	}
+}
+
+note right of Services
+	Plusieurs classes des couches techniques sont volontairement omises
+	afin de garder le diagramme lisible et concentré sur l'architecture modulaire
+	des Processors
+end note
 
 FastAPIApp --> Pipeline
 Pipeline --> IProcessor : uses
+
 IProcessor <|-- StarDetectionProcessor
 IProcessor <|-- FitsToPngProcessor
+IProcessor <|-- StreakDetectionProcessor
+IProcessor <|-- ImageStackingProcessor
+
 Pipeline --> Metrics : uses
 FastAPIApp --> ProcessRequest : accepts
+
+StarDetectionProcessor --> SimbadClient : uses
+StarDetectionProcessor --> ReportService : uses
+
+StreakDetectionProcessor --> ReportService : uses
+StreakDetectionProcessor --> SatelliteDatabaseService : uses
 
 @enduml
